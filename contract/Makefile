@@ -32,8 +32,8 @@ safe_mint:
 	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 
 abi:
-	forge inspect src/WalleMon.sol:WalleMon abi >> w.json
+	forge inspect src/WalleMon.sol:WalleMon abi > w.json
 
 abigen:
-	abigen --abi=w.json --pkg=WalleMon --out=../backend/abi/WalleMon.go
+	abigen --abi=w.json --pkg=abi --out=../backend/abi/WalleMon.go
 

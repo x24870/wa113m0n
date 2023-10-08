@@ -13,7 +13,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 
-	"wallemon/abi"
+	WalleMon "wallemon/abi"
 )
 
 func main() {
@@ -100,7 +100,7 @@ func mintNFT(client *ethclient.Client, privateKey *ecdsa.PrivateKey, nonce uint6
 	auth.GasPrice = gasPrice
 
 	// Get new contract instance
-	contract, err := abi.NewWalleMon(contractAddr, client)
+	contract, err := WalleMon.NewWalleMon(contractAddr, client)
 	if err != nil {
 		log.Fatalf("Failed to instantiate a Token contract: %v", err)
 	}
