@@ -4,16 +4,17 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/big"
+	"strings"
 
-	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum"
+	"github.com/ethereum/go-ethereum/accounts/abi"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-
-	WalleMon "wallemon/abi"
 )
 
 func main() {
@@ -35,117 +36,78 @@ func main() {
 		log.Fatal("Error casting public key to ECDSA")
 	}
 
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
+	from := crypto.PubkeyToAddress(*publicKeyECDSA)
+	nftAddr := common.HexToAddress("0x0165878A594ca255338adfa4d48449f69242Eb8F")
+	to := common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
+	mintNFT(client, privateKey, from, to, nftAddr)
+}
+
+func mintNFT(client *ethclient.Client, privateKey *ecdsa.PrivateKey, from, to, contractAddr common.Address) {
+	contractABI := getContractABI("w.json")
+
+	// Initialize your contract's ABI.
+	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to parse contract ABI: %v", err)
 	}
 
-	value := big.NewInt(1000000000000000000) // in wei (1 eth)
-	gasLimit := uint64(21000)                // in units
+	// Prepare the method input parameters.
+	params, err := parsedABI.Pack("safeMint", to)
+	if err != nil {
+		log.Fatalf("Failed to pack ABI call: %v", err)
+	}
+
+	// Estimate gas price
 	gasPrice, err := client.SuggestGasPrice(context.Background())
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to suggest gas price: %v", err)
 	}
 
-	toAddress := common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8") // Replace '0xTO_ADDRESS' with actual destination address
-	var data []byte
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, data)
+	// Get chainID
+	cid, err := client.ChainID(context.Background())
+	if err != nil {
+		log.Fatalf("Failed to get chain ID: %v", err)
+	}
 
-	chainID, err := client.NetworkID(context.Background())
+	nonce, err := client.PendingNonceAt(context.Background(), from)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
+	// Estimate gas limit.
+	gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
+		From:  from,
+		To:    &contractAddr,
+		Gas:   0,
+		Value: nil,
+		Data:  params,
+	})
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to estimate gas limit: %v", err)
 	}
 
+	tx := types.NewTransaction(nonce, contractAddr, big.NewInt(0), gasLimit, gasPrice, params)
+
+	// Sign the transaction.
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(cid), privateKey)
+	if err != nil {
+		log.Fatalf("Failed to sign transaction: %v", err)
+	}
+
+	// Broadcast the transaction.
 	err = client.SendTransaction(context.Background(), signedTx)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Failed to send transaction: %v", err)
 	}
 
 	fmt.Printf("Sent Transaction: %s\n", signedTx.Hash().Hex())
-
-	nonce, err = client.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		log.Fatal(err)
-	}
-	nftAddr := common.HexToAddress("0x0165878A594ca255338adfa4d48449f69242Eb8F")
-	toAddr := common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8")
-	mintNFT(client, privateKey, nonce, nftAddr, toAddr)
 }
 
-func mintNFT(client *ethclient.Client, privateKey *ecdsa.PrivateKey, nonce uint64, contractAddr, toMintAddress common.Address) {
-
-	gasPrice, err := client.SuggestGasPrice(context.Background())
+func getContractABI(path string) string {
+	// Read the file content
+	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Unable to read ABI file: %v", err)
 	}
-
-	cid, err := client.ChainID(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, cid)
-	if err != nil {
-		log.Fatalf("Failed to create authorized transactor: %v", err)
-	}
-	auth.Nonce = big.NewInt(int64(nonce))
-	auth.Value = big.NewInt(0)     // in wei
-	auth.GasLimit = uint64(300000) // in units
-	auth.GasPrice = gasPrice
-
-	// Get new contract instance
-	contract, err := WalleMon.NewWalleMon(contractAddr, client)
-	if err != nil {
-		log.Fatalf("Failed to instantiate a Token contract: %v", err)
-	}
-	fmt.Println("contract", contract)
-	// call function of contract instance and get count value
-	tx, err := contract.SafeMint(auth, toMintAddress)
-	if err != nil {
-		log.Fatalf("Failed to call SafeMint function: %v", err)
-	}
-
-	fmt.Printf("tx sent: %s", tx.Hash().Hex())
-	// Read the ABI
-	// parsedABI, err := abi.JSON(strings.NewReader(""))
-	// if err != nil {
-	// 	log.Fatalf("Failed to parse contract ABI: %v", err)
-	// }
-
-	// // Pack ABI with the method and arguments
-	// data, err := parsedABI.Pack("safeMint", toMintAddress)
-	// if err != nil {
-	// 	log.Fatalf("Failed to pack ABI with method and arguments: %v", err)
-	// }
-
-	// // Create a transaction
-	// tx := types.NewTransaction(
-	// 	nonce, // nonce for the sender's account
-	// 	contractAddress,
-	// 	big.NewInt(0), // amount to transfer
-	// 	gasLimit,
-	// 	gasPrice,
-	// 	data, // contract method input parameters
-	// )
-
-	// // Sign the transaction
-	// chainID := big.NewInt(1) // Mainnet ID. For Rinkeby Testnet use 4, for Ropsten Testnet use 3, etc.
-	// signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	// if err != nil {
-	// 	log.Fatalf("Failed to sign transaction: %v", err)
-	// }
-
-	// // Broadcast the transaction
-	// err = client.SendTransaction(context.Background(), signedTx)
-	// if err != nil {
-	// 	log.Fatalf("Failed to send transaction: %v", err)
-	// }
-
-	// fmt.Printf("Transaction sent: %s\n", signedTx.Hash().Hex())
+	return string(data)
 }

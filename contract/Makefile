@@ -27,6 +27,11 @@ token_uri:
 token_owner:
 	cast call ${CONTRACT} "ownerOf(uint256)(address)" 3
 
+balanceOf:
+	cast call ${CONTRACT} "balanceOf(address)(uint256)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+
+total_supply:
+	cast call ${CONTRACT} "totalSupply()(uint256)"
 
 safe_mint:
 	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
