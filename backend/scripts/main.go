@@ -43,9 +43,8 @@ func main() {
 }
 
 func mintNFT(client *ethclient.Client, privateKey *ecdsa.PrivateKey, from, to, contractAddr common.Address) {
+	// Initialize contract's ABI.
 	contractABI := getContractABI("w.json")
-
-	// Initialize your contract's ABI.
 	parsedABI, err := abi.JSON(strings.NewReader(contractABI))
 	if err != nil {
 		log.Fatalf("Failed to parse contract ABI: %v", err)
@@ -69,6 +68,7 @@ func mintNFT(client *ethclient.Client, privateKey *ecdsa.PrivateKey, from, to, c
 		log.Fatalf("Failed to get chain ID: %v", err)
 	}
 
+	// Get the nonce
 	nonce, err := client.PendingNonceAt(context.Background(), from)
 	if err != nil {
 		log.Fatal(err)
@@ -86,6 +86,7 @@ func mintNFT(client *ethclient.Client, privateKey *ecdsa.PrivateKey, from, to, c
 		log.Fatalf("Failed to estimate gas limit: %v", err)
 	}
 
+	// Create the transaction.
 	tx := types.NewTransaction(nonce, contractAddr, big.NewInt(0), gasLimit, gasPrice, params)
 
 	// Sign the transaction.
