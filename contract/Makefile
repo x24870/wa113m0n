@@ -22,16 +22,18 @@ deploy_local:
 
 script:
 	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv
+upgrade:
+	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/UpgradeWalleMon.s.sol --broadcast --verify -vvvv
 
-#   [1679136] → new WalleMon@0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44
+#   [2095697] → new WalleMon@0x95401dc811bb5740090279Ba06cfA8fcF6113778
 #     ├─ emit Initialized(version: 18446744073709551615 [1.844e19])
-#     └─ ← 7410 bytes of code
+#     └─ ← 9340 bytes of code
 
-#   [130469] → new ERC1967Proxy@0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f
-#     ├─ emit Upgraded(implementation: WalleMon: [0x322813Fd9A801c5507c9de605d63CEA4f2CE6c44])
+#   [130469] → new ERC1967Proxy@0x998abeb3E57409262aE5b751f60747921B33613E
+#     ├─ emit Upgraded(implementation: WalleMon: [0x95401dc811bb5740090279Ba06cfA8fcF6113778])
 #     └─ ← 170 bytes of code
 
-CONTRACT=0xa85233C63b9Ee964Add6F2cffe00Fd84eb32338f
+CONTRACT=0x998abeb3E57409262aE5b751f60747921B33613E
 getNum:
 	cast call ${CONTRACT} "getNum()(uint256)"
 setNum:
@@ -40,6 +42,8 @@ incr:
 	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "incrementNum()"
 add:
 	cast call ${CONTRACT} "add(uint256,uint256)" 2 6 | tr -d '"' | cast to-dec
+blocktime:
+	cast call ${CONTRACT} "blocktime()(uint256)"
 
 token_uri:
 	cast call ${CONTRACT} "tokenURI(uint256)(string)" 0
@@ -56,8 +60,8 @@ total_supply:
 safeMint:
 	@echo "Sending transaction to contract ${CONTRACT}"
 	@echo "Using private key: ${PRIVATE_KEY}"
-	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-	# cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address,string)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 fucnk
+	# cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address,string)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 fucnk
 
 owner:
 	cast call ${CONTRACT} "owner()(address)"

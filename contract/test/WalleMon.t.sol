@@ -11,7 +11,6 @@ contract WalleMonTest is Test {
 
     function setUp() public {
         deployWalleMon = new DeployWalleMon();
-        // console2.log("** owner: ", onwer);
     }
 
     function testWalleMonWorks() public {
@@ -31,15 +30,10 @@ contract WalleMonTest is Test {
         console2.log("msg.sender: ", msg.sender);
         console2.log("walleMon", w.owner());
 
-        w.safeMint(to);
+        w.safeMint(to, "tokenURI");
         assertEq(1, w.balanceOf(to));
 
         assertEq(69, w.getNum());
     }
-
-    // function testAdd() public {
-    //     console2.log("testAdd-----------------------------");
-    //     assertEq(walleMon.add(1, 2), 3);
-    // }
 
 }
