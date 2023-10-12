@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+// import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
@@ -9,12 +10,15 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
-    // enum State { HEALTHY, SICK, DEAD }
-    // struct  {
+    enum Health { HEALTHY, SICK, DEAD }
+    struct State {
+        Health health;
+        uint256 lastMealTime;
+    }
 
-    // }
     uint256 private _nextTokenId;
     uint256 private _num;
+    mapping(uint256 => State) private _states;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -45,8 +49,55 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         override
     {}
 
-    // The following functions are overrides required by Solidity.
+    // WalletMon logic functions
+    function feed(uint256 tokenId) public onlyTokenOwner(tokenId) {
+        require(
+            _states[tokenId].health == Health.HEALTHY,
+            "WalleMon: dead or sick"
+        );
+        _states[tokenId].lastMealTime = block.timestamp;
+    }
 
+    function sick(uint256 tokenId) public onlyOwner() {
+        require(
+            _states[tokenId].health == Health.HEALTHY,
+            "WalleMon: dead or sick"
+        );
+        _states[tokenId].health = Health.SICK;
+    }
+
+    function heal(uint256 tokenId) public onlyTokenOwner(tokenId) {
+        require(
+            _states[tokenId].health == Health.SICK,
+            "WalleMon: not sick"
+        );
+        _states[tokenId].health = Health.HEALTHY;
+    }
+
+    function kill(uint256 tokenId) public onlyOwner() {
+        require(
+            _states[tokenId].health == Health.SICK,
+            "WalleMon: not sick"
+        );
+        _states[tokenId].health = Health.DEAD;
+    }
+
+    // View functions
+    function getHealth(uint256 tokenId) public view returns (Health) {
+        return _states[tokenId].health;
+    }
+
+    function getLastMealTime(uint256 tokenId) public view returns (uint256) {
+        return _states[tokenId].lastMealTime;
+    }
+
+    // Modifiers
+    modifier onlyTokenOwner(uint256 tokenId) {
+        require(msg.sender == ownerOf(tokenId), "WalleMon: not token owner");
+        _;
+    }
+
+    // The following functions are overrides required by Solidity.
     function _update(address to, uint256 tokenId, address auth)
         internal
         override(ERC721Upgradeable, ERC721EnumerableUpgradeable)
@@ -84,6 +135,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         return a + b;
     }
 
+    // playground functions
     function version() public pure returns (uint256) {
         return 1;
     }
