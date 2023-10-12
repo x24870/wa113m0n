@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract WalleMon is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
     uint256 private _nextTokenId;
+    uint256 internal _num;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() {
@@ -18,6 +19,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSU
         __ERC721_init("WalleMon", "WLM");
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
+        _num = 69;
     }
 
     function _baseURI() internal pure override returns (string memory) {
@@ -41,5 +43,17 @@ contract WalleMon is Initializable, ERC721Upgradeable, OwnableUpgradeable, UUPSU
 
     function version() public pure returns (uint256) {
         return 1;
+    }
+
+    function getNum() public view returns (uint256) {
+        return _num;
+    }
+
+    function setNum(uint256 num) public {
+        _num = num;
+    }
+
+    function incrementNum() public {
+        _num++;
     }
 }
