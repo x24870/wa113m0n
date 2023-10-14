@@ -7,33 +7,78 @@ import {DeployWalleMon} from "../script/WalleMon.s.sol";
 
 contract WalleMonTest is Test {
     DeployWalleMon public deployWalleMon;
-    // address public onwer = address(this);
+    WalleMon public walletMon;
+    address public proxy;
+    address public owner;
+    address public mintTo;
 
     function setUp() public {
+        owner = msg.sender;
+        vm.startPrank(owner);
+
+        // deploy WalleMon
         deployWalleMon = new DeployWalleMon();
+        proxy = deployWalleMon.deployWalleMon();
+        deployWalleMon.initWalletMon(proxy);
+
+        // setup
+        walletMon = WalleMon(proxy);
+        mintTo = address(0x1);
+
+        vm.stopPrank();
     }
 
-    // function testWalleMonWorks() public {
-    //     address proxyAddress = deployWalleMon.deployWalleMon();
-    //     deployWalleMon.initWalletMon(proxyAddress);
-    //     uint256 expectedValue = 1;
-    //     assertEq(expectedValue, WalleMon(proxyAddress).version());
+    function testWalleMon() public {
+        vm.startPrank(owner);
 
-    //     address to = 0x70997970C51812dc3A010C7d01b50e0d17dc79C8;
-    //     assertEq(0, WalleMon(proxyAddress).balanceOf(to));
+        // test version
+        uint256 expectedValue = 1;
+        assertEq(expectedValue, WalleMon(proxy).version());
 
-    //     WalleMon w = WalleMon(proxyAddress);
-    //     uint256 b = w.balanceOf(to);
-    //     assertEq(0, b);
+        // test balanceOf
+        assertEq(0, WalleMon(proxy).balanceOf(mintTo));
 
-    //     console2.log("************* proxyAddress: ", proxyAddress);
-    //     console2.log("msg.sender: ", msg.sender);
-    //     console2.log("walleMon", w.owner());
+        // test owner
+        console2.log("************* proxyAddress: ", proxy);
+        console2.log("msg.sender: ", msg.sender);
+        console2.log("walleMon", walletMon.owner());
+        assertEq(msg.sender, walletMon.owner());
 
-    //     w.safeMint(to, "tokenURI");
-    //     assertEq(1, w.balanceOf(to));
+        vm.stopPrank();
+    }
 
-    //     assertEq(69, w.getNum());
-    // }
+    function testWalleMonGame() public {
+        vm.prank(owner);
+        walletMon.safeMint(mintTo, "tokenURI");
+        assertEq(1, walletMon.balanceOf(mintTo));
+        assertEq(mintTo, walletMon.ownerOf(0));
+        uint256 bornMealTime = block.timestamp;
+        assertEq(block.timestamp, bornMealTime);
+        vm.warp(block.timestamp+ 1 minutes);
+        vm.roll(block.number+1);
 
+        // feed
+        vm.prank(mintTo);
+        walletMon.feed(0);
+        assertEq(block.timestamp, walletMon.lastMealTime(0));
+        assertEq(bornMealTime + 1 minutes, walletMon.lastMealTime(0));
+     
+        // sick
+        vm.prank(owner);
+        walletMon.sick(0);
+        assertEq(uint8(WalleMon.Health.SICK), walletMon.health(0));
+
+        // heal
+        vm.prank(mintTo);
+        walletMon.heal(0);
+        assertEq(uint8(WalleMon.Health.HEALTHY), walletMon.health(0));
+
+        // kill
+        vm.prank(owner);
+        walletMon.sick(0);
+        vm.prank(owner);
+        walletMon.kill(0);
+        assertEq(uint8(WalleMon.Health.DEAD), walletMon.health(0));
+
+    }
 }

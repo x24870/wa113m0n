@@ -11,7 +11,7 @@ build:
 	forge build
 
 test:
-	forge test -vv
+	forge test -vvv
 
 run_local_node:
 	anvil

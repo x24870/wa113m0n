@@ -14,6 +14,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     struct State {
         Health health;
         uint256 lastMealTime;
+        uint256 lastHealTime;
     }
 
     uint256 private _nextTokenId;
@@ -41,6 +42,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
+        feed(tokenId);
     }
 
     function _authorizeUpgrade(address newImplementation)
@@ -50,7 +52,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     {}
 
     // WalletMon logic functions
-    function feed(uint256 tokenId) public onlyTokenOwner(tokenId) {
+    function feed(uint256 tokenId) public onlyOwnerOrTokenOwner(tokenId) {
         require(
             _states[tokenId].health == Health.HEALTHY,
             "WalleMon: dead or sick"
@@ -83,17 +85,30 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     }
 
     // View functions
-    function getHealth(uint256 tokenId) public view returns (Health) {
-        return _states[tokenId].health;
+    function health(uint256 tokenId) public view returns (uint8) {
+        return uint8(_states[tokenId].health);
     }
 
-    function getLastMealTime(uint256 tokenId) public view returns (uint256) {
+    function lastMealTime(uint256 tokenId) public view returns (uint256) {
         return _states[tokenId].lastMealTime;
     }
+
+    function lastHealTime(uint256 tokenId) public view returns (uint256) {
+        return _states[tokenId].lastHealTime;
+    }
+
 
     // Modifiers
     modifier onlyTokenOwner(uint256 tokenId) {
         require(msg.sender == ownerOf(tokenId), "WalleMon: not token owner");
+        _;
+    }
+
+    modifier onlyOwnerOrTokenOwner(uint256 tokenId) {
+        require(
+            msg.sender == ownerOf(tokenId) || msg.sender == owner(),
+            "WalleMon: not token owner or owner"
+        );
         _;
     }
 
