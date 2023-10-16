@@ -1,0 +1,16 @@
+{
+    "name": "Walle'Mon",
+    "description": "Best web3 partner ever!",
+    "image": "https://ipfs.blocto.app/ipfs/Qmbnvcgrwjo9amrTGy9kc5VDejYN1ZyrLckXQFoMkDRS9B",
+    "attributes": [
+      {
+        "trait_type": "Rarity",
+        "value": "Legendary"
+      },
+      {
+        "trait_type": "Strength",
+        "value": 100
+      }
+    ]
+  }
+  

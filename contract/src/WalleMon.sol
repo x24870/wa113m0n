@@ -17,6 +17,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         uint256 lastHealTime;
     }
 
+    bool private _revealed;
+    string private _eggURI;
     uint256 private _nextTokenId;
     uint256 private _num;
     mapping(uint256 => State) private _states;
@@ -32,10 +34,20 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         __ERC721URIStorage_init();
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
+        _revealed = false;
+        _eggURI = "https://ipfs.blocto.app/ipfs/Qmbnvcgrwjo9amrTGy9kc5VDejYN1ZyrLckXQFoMkDRS9B";
     }
 
     function _baseURI() internal pure override returns (string memory) {
-        return "https://wallemon.xyz";
+        return "https://ipfs.blocto.app/ipfs/Qmbnvcgrwjo9amrTGy9kc5VDejYN1ZyrLckXQFoMkDRS9B";
+    }
+
+    function setEggURI(string calldata eggURI) public onlyOwner {
+        _eggURI = eggURI;
+    }
+
+    function setRevealed(bool revealed) public onlyOwner {
+        _revealed = revealed;
     }
 
     function safeMint(address to, string memory uri) public onlyOwner {
@@ -134,6 +146,9 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
         returns (string memory)
     {
+        if (!_revealed) {
+            return _eggURI;
+        }
         return super.tokenURI(tokenId);
     }
 
@@ -146,7 +161,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         return super.supportsInterface(interfaceId);
     }
 
-        function add (uint256 a, uint256 b) public pure returns (uint256) {
+    function add (uint256 a, uint256 b) public pure returns (uint256) {
         return a + b;
     }
 
