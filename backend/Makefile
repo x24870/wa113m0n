@@ -2,15 +2,20 @@
 
 # Set project ID and image name
 GCP_PROJECT_ID=growth-squad-396607
-IMAGE_NAME=wallemon
+IMAGE_NAME=wallemon-bot
 IMAGE_TAG=latest
 GCR_HOSTNAME=asia.gcr.io
+
+run-bot:
+	docker run -it --rm --name $(IMAGE_NAME) -p 8080:8080 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
 
 # Create a Docker image
 .PHONY: build
 build:
 	@echo "Building Docker image..."
-	docker build -t $(IMAGE_NAME) .
+	docker build -f dockerfile-bot -t $(IMAGE_NAME) .
+	docker tag $(IMAGE_NAME) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
+	
 
 # Push the Docker image to Google Container Registry
 .PHONY: push

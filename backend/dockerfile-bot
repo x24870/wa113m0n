@@ -16,13 +16,12 @@ COPY . .
 
 # Build the Go app
 # RUN go build -o wallemon main.go
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o wallemon main.go
-
-# Expose port 8080 to the outside world
-EXPOSE 8080
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bot cmd/bot/main.go
 
 # Final Stage
 FROM alpine
+# Copy env.yaml file
+COPY config/env.yaml ./config/
 # Ensure you copy the binary with the correct name
-COPY --from=builder /app/wallemon /app/wallemon
-CMD ["/app/wallemon"]
+COPY --from=builder /app/bot /app/bot
+CMD ["/app/bot"]
