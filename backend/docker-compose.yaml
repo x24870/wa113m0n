@@ -1,0 +1,34 @@
+version: '3.8'
+
+services:
+  # Postgres Database
+  db:
+    image: postgres:13
+    container_name: postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: user
+      POSTGRES_DB: wallemon
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+  # Wallemon Bot
+  bot:
+    image: wallemon-bot
+    container_name: bot
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://user:user@db:5432/wallemon
+  # Wallemon Service
+  service:
+    image: wallemon-service
+    container_name: service
+    depends_on:
+      - db
+    environment:
+      - DATABASE_URL=postgres://user:user@db:5432/wallemon
+
+volumes:
+  postgres_data:

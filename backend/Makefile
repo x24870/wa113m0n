@@ -2,41 +2,44 @@
 
 # Set project ID and image name
 GCP_PROJECT_ID=growth-squad-396607
-IMAGE_NAME=wallemon-bot
+BOT_IMAGE=wallemon-bot
+SERVICE_IMAGE=wallemon-service
 IMAGE_TAG=latest
 GCR_HOSTNAME=asia.gcr.io
 
-run-bot:
-	docker run -it --rm --name $(IMAGE_NAME) -p 8080:8080 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
+.PHONY: docker-compose push configure-docker deploy build-bot run-bot
 
-# Create a Docker image
-.PHONY: build
-build:
-	@echo "Building Docker image..."
-	docker build -f dockerfile-bot -t $(IMAGE_NAME) .
-	docker tag $(IMAGE_NAME) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
-	
+run-bot:
+	docker run -it --rm --name $(BOT_IMAGE) -p 8080:8080 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
+
+docker-compose:
+	docker-compose up -d -f docker-compose.yaml
+
+build-bot:
+	docker build -f dockerfile-bot -t $(BOT_IMAGE) .
+	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
+build-service:
+	docker build -f dockerfile-service -t $(SERVICE_IMAGE) .
+	docker tag $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(IMAGE_TAG)
+
 
 # Push the Docker image to Google Container Registry
-.PHONY: push
 push: configure-docker build
 	@echo "Pushing Docker image to GCR..."
-	docker tag $(IMAGE_NAME) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
-	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)
+	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
+	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
 
 # Authenticate Docker to GCR
-.PHONY: configure-docker
 configure-docker:
 	@echo "Configuring Docker for GCR..."
 	gcloud auth configure-docker $(GCR_HOSTNAME)
 
 # Deploy the Docker image to a GCP VM
-.PHONY: deploy
 deploy: push
 	@echo "Deploying Docker image to GCP VM..."
 	ssh $(VM_USER)@$(VM_IP) "\
 		gcloud auth configure-docker $(GCR_HOSTNAME) && \
-		docker pull $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG) && \
-		docker stop $(IMAGE_NAME) || true && \
-		docker rm $(IMAGE_NAME) || true && \
-		docker run -d --name $(IMAGE_NAME) -p 8080:8080 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(IMAGE_NAME):$(IMAGE_TAG)"
+		docker pull $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG) && \
+		docker stop $(BOT_IMAGE) || true && \
+		docker rm $(BOT_IMAGE) || true && \
+		docker run -d --name $(BOT_IMAGE) -p 8080:8080 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)"
