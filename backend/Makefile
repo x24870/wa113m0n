@@ -11,6 +11,8 @@ GCR_HOSTNAME=asia.gcr.io
 
 run-bot:
 	docker run -it --rm --name $(BOT_IMAGE) -p 8080:8080 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
+run-service:
+	docker run -it --rm --name $(SERVICE_IMAGE) -p 8081:8081 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(IMAGE_TAG)
 
 docker-compose:
 	docker-compose up -d -f docker-compose.yaml

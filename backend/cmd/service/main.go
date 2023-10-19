@@ -3,12 +3,11 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
-	gormpkg "wallemon/pkg/gorm"
+	utils "wallemon/pkg/utils"
 )
 
 // Define a type Greeting to manage the JSON response
@@ -22,18 +21,23 @@ var (
 
 func init() {
 	var err error
-	gormdb, err = gormpkg.NewGormPostgresConn(
-		gormpkg.Config{
-			// DSN:             config.GetDBArg(),
-			DSN:             "postgres://user:user@db:5432/wallemon?sslmode=disable", //TODO: use config
-			MaxIdleConns:    2,
-			MaxOpenConns:    2,
-			ConnMaxLifetime: 10 * time.Minute,
-			SingularTable:   true,
-		},
-	)
+	// gormdb, err = gormpkg.NewGormPostgresConn(
+	// 	gormpkg.Config{
+	// 		// DSN:             config.GetDBArg(),
+	// 		DSN:             "postgres://user:user@db:5432/wallemon?sslmode=disable", //TODO: use config
+	// 		MaxIdleConns:    2,
+	// 		MaxOpenConns:    2,
+	// 		ConnMaxLifetime: 10 * time.Minute,
+	// 		SingularTable:   true,
+	// 	},
+	// )
+	// if err != nil {
+	// 	panic(fmt.Errorf("failed to init db"))
+	// }
+
+	err = utils.LoadSecrets("config/.secrets")
 	if err != nil {
-		panic(fmt.Errorf("failed to init db"))
+		panic(fmt.Errorf("failed to load secrets: %v", err))
 	}
 }
 
