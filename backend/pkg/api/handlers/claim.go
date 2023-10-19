@@ -1,14 +1,20 @@
 package api
 
 import (
+	"encoding/hex"
 	"net/http"
+	"os"
 
+	utils "wallemon/pkg/utils"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
 )
 
 type ClaimReq struct {
-	Address string `json:"address"` // EVM address with 0x prefix
-	RefCode string `json:"refCode"` // Referral code
+	Address string `json:"address"`  // EVM address with 0x prefix
+	RefCode string `json:"ref_code"` // Referral code
 }
 
 // Claim - Handler to claim a wallemon
@@ -37,5 +43,35 @@ func Claim(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"signature": "0x1234567890abcdef"})
+	// get signer private key string from environment variable
+	k := os.Getenv("SIGNER_KEY")
+	if k[:2] == "0x" {
+		k = k[2:]
+	}
+	if len(k) != 64 {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error. signer key error"})
+		return
+	}
+
+	// key string to private key then get signer
+	pk, err := utils.KeyStringToPrivateKey(k)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error. pk error"})
+		return
+	}
+
+	// sign
+	to := common.HexToAddress(gq.Address)
+	msg := utils.EncodePacked(to.Bytes(), []byte(gq.RefCode))
+	msgHash := crypto.Keccak256(msg)
+	signedMsg := utils.EncodePacked([]byte("\x19Ethereum Signed Message:\n32"), msgHash)
+	signedMsgHash := crypto.Keccak256(signedMsg)
+	signature, err := crypto.Sign(signedMsgHash, pk)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Sign error."})
+		return
+	}
+
+	// return hex string signature
+	c.JSON(http.StatusOK, gin.H{"signature": hex.EncodeToString(signature)})
 }

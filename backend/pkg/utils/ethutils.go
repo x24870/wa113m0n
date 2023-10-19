@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"log"
@@ -94,4 +95,16 @@ func (e *EthereumClient) SendTransaction(toAddress common.Address, amount *big.I
 	}
 
 	return signedTx, nil
+}
+
+func KeyStringToPrivateKey(key string) (*ecdsa.PrivateKey, error) {
+	privateKey, err := crypto.HexToECDSA(key)
+	if err != nil {
+		return nil, err
+	}
+	return privateKey, nil
+}
+
+func EncodePacked(input ...[]byte) []byte {
+	return bytes.Join(input, nil)
 }

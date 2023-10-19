@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 
+	"wallemon/pkg/api"
 	utils "wallemon/pkg/utils"
 )
 
@@ -53,6 +54,9 @@ func main() {
 		// Respond with a JSON
 		c.JSON(http.StatusOK, Greeting{Message: greetingMessage})
 	})
+
+	// Setup the routes
+	api.SetupRoutes(r)
 
 	// Start the server on port 8080
 	r.Run(":8080")
