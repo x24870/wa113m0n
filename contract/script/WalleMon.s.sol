@@ -4,15 +4,22 @@ pragma solidity ^0.8.19;
 import {console2} from "forge-std/Test.sol";
 import {Script} from "forge-std/Script.sol";
 import {WalleMon} from "../src/WalleMon.sol";
+import {Referral} from "../src/Referral.sol";
 import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.sol";
 
 contract DeployWalleMon is Script {
     function run() external returns (address) {
         vm.startBroadcast();
         address proxy = deployWalleMon();
-        initWalletMon(proxy);
+        address referral = deployReferral();
+        initWalletMon(proxy, referral);
         vm.stopBroadcast();
         return proxy;
+    }
+
+    function deployReferral() public returns (address) {
+        Referral referral = new Referral();
+        return address(referral);
     }
 
     function deployWalleMon() public returns (address) {
@@ -26,11 +33,13 @@ contract DeployWalleMon is Script {
         return address(proxy);
     }
 
-    function initWalletMon(address proxy) public {
+    function initWalletMon(address proxy, address referral) public {
         // vm.startBroadcast();
         WalleMon w = WalleMon(proxy);
         console2.log("initWalletMon msg.sender: ", msg.sender);
-        w.initialize(msg.sender);
+        w.initialize(msg.sender, referral);
+        Referral r = Referral(referral);
+        r.setOwner(msg.sender);
         // vm.stopBroadcast();
     }
 }

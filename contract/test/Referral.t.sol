@@ -24,7 +24,7 @@ contract RefferalTest is Test {
     }
 
     function testClaim() public {
-        string memory refCode = "CryptoKOL";
+        string memory refCode = "wallemon";
         vm.prank(_owner);
         referral.setReferralAmounts(refCode, 1);
         assertEq(referral.getReferralAmounts(refCode), 1);
@@ -32,7 +32,8 @@ contract RefferalTest is Test {
         // user get claim message from BE
         bytes memory sig = getOwnerSignedMsg(_user, refCode);
         vm.prank(_user);
-        referral.claim(refCode, sig);
+        console2.log("user mint sig: ", iToHex(sig));
+        referral.claim(msg.sender, refCode, sig);
 
         assertEq(referral.getClaimed(_user), refCode);
         assertEq(referral.getReferralCount(refCode), 1);
@@ -41,14 +42,14 @@ contract RefferalTest is Test {
         // user claim again
         vm.expectRevert("Referral: already claimed");
         vm.prank(_user);
-        referral.claim(refCode, sig);
+        referral.claim(msg.sender, refCode, sig);
 
         // referral code allowed amount is 0
         vm.expectRevert("Referral: no amount left");
         address user2 = address(0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC);
         sig = getOwnerSignedMsg(user2, refCode);
         vm.prank(user2);
-        referral.claim(refCode, sig);
+        referral.claim(msg.sender, refCode, sig);
 
         // fake signer
         vm.expectRevert("Referral: invalid signature");
@@ -58,20 +59,37 @@ contract RefferalTest is Test {
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(user2PrivateKey, signedMsgHash);
         sig = abi.encodePacked(r, s, v);
         vm.prank(user2);
-        referral.claim(refCode, sig);
+        referral.claim(msg.sender, refCode, sig);
     }
 
     function testVerify() public {
-        string memory refCode = "CryptoKOL";
+        string memory refCode = "wallemon";
         bytes memory sig = getOwnerSignedMsg(_user, refCode);
+        console2.log("testVerify sig: ", iToHex(sig));
         assertEq(true, referral.verify(_owner, _user, refCode, sig));
     }
 
+    // TODO: refactor this test file
     function getOwnerSignedMsg(address _claimTo, string memory _refCode) internal view returns (bytes memory) {
         bytes32 msgHash = keccak256(abi.encodePacked(_claimTo, _refCode));
         bytes32 signedMsgHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", msgHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(_privateKey, signedMsgHash);
         bytes memory signature = abi.encodePacked(r, s, v);
         return signature;
+    }
+
+    function iToHex(bytes memory buffer) public pure returns (string memory) {
+
+        // Fixed buffer size for hexadecimal convertion
+        bytes memory converted = new bytes(buffer.length * 2);
+
+        bytes memory _base = "0123456789abcdef";
+
+        for (uint256 i = 0; i < buffer.length; i++) {
+            converted[i * 2] = _base[uint8(buffer[i]) / _base.length];
+            converted[i * 2 + 1] = _base[uint8(buffer[i]) % _base.length];
+        }
+
+        return string(abi.encodePacked("0x", converted));
     }
 }

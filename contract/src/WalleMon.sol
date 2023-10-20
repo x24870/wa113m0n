@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URISto
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {Referral} from "./Referral.sol";
 
 contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
     enum Health { HEALTHY, SICK, DEAD }
@@ -17,6 +18,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         uint256 lastHealTime;
     }
 
+    Referral private _referral;
+    address private _refOwner;
     bool private _revealed;
     string private _eggURI;
     uint256 private _nextTokenId;
@@ -28,12 +31,14 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _disableInitializers();
     }
 
-    function initialize(address initialOwner) initializer public {
+    function initialize(address initialOwner, address referral) initializer public {
         __ERC721_init("WalleMon", "WLM");
         __ERC721Enumerable_init();
         __ERC721URIStorage_init();
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
+        _referral = Referral(referral);
+        _refOwner = initialOwner;
         _revealed = false;
         _eggURI = "https://ipfs.blocto.app/ipfs/Qmbnvcgrwjo9amrTGy9kc5VDejYN1ZyrLckXQFoMkDRS9B";
     }
@@ -56,6 +61,30 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _setTokenURI(tokenId, uri);
         feed(tokenId);
     }
+
+    function userMint(string calldata refCode, bytes calldata sig) public {
+        // here we want to keep the original msg.sender, but also access Referral contract storage
+        // so send original msg.sender as first param, then call the Referral contract
+        _referral.claim(msg.sender, refCode, sig);
+        uint256 tokenId = _nextTokenId++;
+        _safeMint(msg.sender, tokenId);
+        _setTokenURI(tokenId, "");
+        feed(tokenId);
+    }
+
+    function bytesToString(bytes memory data) public pure returns (string memory) {
+    bytes memory alphabet = "0123456789abcdef";
+
+    bytes memory str = new bytes(2 + data.length * 2);
+    str[0] = "0";
+    str[1] = "x";
+    for (uint256 i = 0; i < data.length; i++) {
+        str[2+i*2] = alphabet[uint256(uint8(data[i] >> 4))];
+        str[3+i*2] = alphabet[uint256(uint8(data[i] & 0x0f))];
+    }
+    return string(str);
+}
+
 
     function _authorizeUpgrade(address newImplementation)
         internal

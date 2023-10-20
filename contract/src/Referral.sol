@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.9;
 
+import {console2} from "forge-std/Test.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+
 contract Referral {
     address private owner;
     // claimed address => referral code
@@ -43,9 +46,10 @@ contract Referral {
     }
 
     // 
-    function claim(string calldata _referralCode, bytes calldata signature) public {
-        require(compareStr(claimed[msg.sender], ""), "Referral: already claimed");
-        require(verify(owner, msg.sender, _referralCode, signature), "Referral: invalid signature");
+    function claim(address minter, string calldata _referralCode, bytes calldata signature) public {
+        require(Strings.equal(claimed[msg.sender], ""), "Referral: already claimed");
+        require(verify(owner, minter, _referralCode, signature), 
+            "Referral: invalid signature");
         require(referralAmount[_referralCode] > 0, "Referral: no amount left");
         claimed[msg.sender] = _referralCode;
         referralCount[_referralCode] += 1;
@@ -118,13 +122,5 @@ contract Referral {
         }
 
         // implicitly return (r, s, v)
-    }
-
-    // TODO: replace to Strings.equal
-    function compareStr(string memory str1, string memory str2) public pure returns (bool) {
-        if (bytes(str1).length != bytes(str2).length) {
-            return false;
-        }
-        return keccak256(abi.encodePacked(str1)) == keccak256(abi.encodePacked(str2));
     }
 }

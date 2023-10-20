@@ -14,6 +14,15 @@ script:
 	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv
 scriptGoerli:
 	forge script --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv
+setReferral:
+	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/SetReferral.s.sol --broadcast --verify -vvvv
+getReferral:
+	cast call  --rpc-url=${LOCALHOST} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "getReferralAmounts(string)(uint32)" wallemon
+getReferralOwner:
+	cast call  --rpc-url=${LOCALHOST} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "getOwner()(address)"
+setReferralOwner:
+	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "setOwner(address)()" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+
 # upgrade
 upgrade:
 	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/UpgradeWalleMon.s.sol --broadcast --verify -vvvv
@@ -62,3 +71,17 @@ abi:
 
 abigen:
 	abigen --abi=w.json --pkg=abi --out=../backend/abi/WalleMon.go
+
+
+
+#   [2568795] → new WalleMon@0x5FbDB2315678afecb367f032d93F642f64180aa3
+#     ├─ emit Initialized(version: 18446744073709551615 [1.844e19])
+#     └─ ← 11531 bytes of code
+
+#   [135226] → new ERC1967Proxy@0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+#     ├─ emit Upgraded(implementation: WalleMon: [0x5FbDB2315678afecb367f032d93F642f64180aa3])
+#     └─ ← 177 bytes of code
+
+#   [957022] → new Referral@0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
+#     └─ ← 4084 bytes of code
+
