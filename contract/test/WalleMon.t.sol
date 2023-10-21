@@ -36,10 +36,6 @@ contract WalleMonTest is Test {
     function testWalleMon() public {
         vm.startPrank(owner);
 
-        // test version
-        uint256 expectedValue = 1;
-        assertEq(expectedValue, WalleMon(proxy).version());
-
         // test balanceOf
         assertEq(0, WalleMon(proxy).balanceOf(mintTo));
 
@@ -54,9 +50,6 @@ contract WalleMonTest is Test {
         console2.log("referral owner: ", referral.getOwner());
         referral.setReferralAmounts(refCode, 1);
         assertEq(referral.getReferralAmounts(refCode), 1);
-
-
-
 
         vm.stopPrank();
     }

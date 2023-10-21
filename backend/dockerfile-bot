@@ -22,6 +22,7 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bot cmd/bot/main.go
 FROM alpine
 # Copy env.yaml file
 COPY config/env.yaml ./config/
+COPY config/.secrets ./config/
 # Ensure you copy the binary with the correct name
 COPY --from=builder /app/bot /app/bot
 CMD ["/app/bot"]

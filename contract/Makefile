@@ -22,6 +22,9 @@ getReferralOwner:
 	cast call  --rpc-url=${LOCALHOST} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "getOwner()(address)"
 setReferralOwner:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "setOwner(address)()" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+reveal:
+	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} ${CONTRACT} "setRevealed(bool)()" true
+
 
 # upgrade
 upgrade:
@@ -67,7 +70,7 @@ owner:
 
 # utils
 abi:
-	forge inspect src/WalleMon.sol:WalleMon abi > ../backend/scripts/w.json
+	forge inspect src/WalleMon.sol:WalleMon abi > ../backend/config/abi.json
 
 abigen:
 	abigen --abi=w.json --pkg=abi --out=../backend/abi/WalleMon.go

@@ -1,3 +1,4 @@
 .env
 .secrets
+.bot-secrets
 contract/broadcast/

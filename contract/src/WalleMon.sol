@@ -14,16 +14,23 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     enum Health { HEALTHY, SICK, DEAD }
     struct State {
         Health health;
-        uint256 lastMealTime;
-        uint256 lastHealTime;
+        uint32 lastMealTime;
+        uint32 lastSickTime;
+        uint32 lastHealTime;
     }
 
-    Referral private _referral;
-    address private _refOwner;
+    // misc params
     bool private _revealed;
     string private _eggURI;
+    uint32 private _hungryDuration; // the time interval from last feed time, after which a WalleMon is sick
+    uint32 private _sickDuration; // the time interval from last get sick time, after which a WalleMon is dead
+    uint32 private _invincibleDuration; // the time interval after a WalleMon is healed, during which it cannot be sick again
+
+    // roles
+    Referral private _referral;
+    address private _refOwner;
+    // token state
     uint256 private _nextTokenId;
-    uint256 private _num;
     mapping(uint256 => State) private _states;
 
     /// @custom:oz-upgrades-unsafe-allow constructor
@@ -37,6 +44,9 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         __ERC721URIStorage_init();
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
+        _hungryDuration = 5 seconds;
+        _sickDuration = 3 seconds;
+        _invincibleDuration = 3 seconds;
         _referral = Referral(referral);
         _refOwner = initialOwner;
         _revealed = false;
@@ -72,20 +82,6 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         feed(tokenId);
     }
 
-    function bytesToString(bytes memory data) public pure returns (string memory) {
-    bytes memory alphabet = "0123456789abcdef";
-
-    bytes memory str = new bytes(2 + data.length * 2);
-    str[0] = "0";
-    str[1] = "x";
-    for (uint256 i = 0; i < data.length; i++) {
-        str[2+i*2] = alphabet[uint256(uint8(data[i] >> 4))];
-        str[3+i*2] = alphabet[uint256(uint8(data[i] & 0x0f))];
-    }
-    return string(str);
-}
-
-
     function _authorizeUpgrade(address newImplementation)
         internal
         onlyOwner
@@ -98,7 +94,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
             _states[tokenId].health == Health.HEALTHY,
             "WalleMon: dead or sick"
         );
-        _states[tokenId].lastMealTime = block.timestamp;
+        _states[tokenId].lastMealTime = uint32(block.timestamp);
     }
 
     function sick(uint256 tokenId) public onlyOwner() {
@@ -109,7 +105,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _states[tokenId].health = Health.SICK;
     }
 
-    function heal(uint256 tokenId) public onlyTokenOwner(tokenId) {
+    function heal(uint256 tokenId) public onlyOwnerOrTokenOwner(tokenId) {
         require(
             _states[tokenId].health == Health.SICK,
             "WalleMon: not sick"
@@ -125,6 +121,18 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _states[tokenId].health = Health.DEAD;
     }
 
+    function batchSick(uint256[] calldata tokenIds) public onlyOwner() {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            sick(tokenIds[i]);
+        }
+    }
+
+    function batachKill(uint256[] calldata tokenIds) public onlyOwner() {
+        for (uint256 i = 0; i < tokenIds.length; i++) {
+            kill(tokenIds[i]);
+        }
+    }
+
     // View functions
     function health(uint256 tokenId) public view returns (uint8) {
         return uint8(_states[tokenId].health);
@@ -136,6 +144,69 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
     function lastHealTime(uint256 tokenId) public view returns (uint256) {
         return _states[tokenId].lastHealTime;
+    }
+
+    // TODO: maybe set to onlyOwner
+    function toBeSickList() public view returns (uint256[] memory) {
+        uint256 counter = 0;
+
+        // First pass to determine the size
+        for (uint256 i = 0; i < _nextTokenId; i++) {
+            if (_states[i].health == Health.HEALTHY && 
+                block.timestamp - _states[i].lastMealTime > _hungryDuration &&
+                block.timestamp - _states[i].lastHealTime > _invincibleDuration
+            ) {
+                counter++;
+            }
+        }
+
+        // Allocate the memory array
+        uint256[] memory result = new uint256[](counter);
+
+        // Second pass to populate the results
+        uint256 resultIndex = 0;
+        for (uint256 i = 0; i < _nextTokenId; i++) {
+            if (_states[i].health == Health.HEALTHY && 
+                block.timestamp - _states[i].lastMealTime > _hungryDuration &&
+                block.timestamp - _states[i].lastHealTime > _invincibleDuration
+            ) {
+                result[resultIndex] = i;
+                resultIndex++;
+            }
+        }
+
+        return result;
+    }
+
+
+    // TODO: maybe set to onlyOwner
+    function toBeDeadList() public view returns (uint256[] memory) {
+        uint256 counter = 0;
+
+        // First pass to determine the size
+        for (uint256 i = 0; i < _nextTokenId; i++) {
+            if (_states[i].health == Health.SICK && 
+                block.timestamp - _states[i].lastSickTime > _sickDuration
+            ) {
+                counter++;
+            }
+        }
+
+        // Allocate the memory array
+        uint256[] memory result = new uint256[](counter);
+
+        // Second pass to populate the results
+        uint256 resultIndex = 0;
+        for (uint256 i = 0; i < _nextTokenId; i++) {
+            if (_states[i].health == Health.SICK && 
+                block.timestamp - _states[i].lastSickTime > _sickDuration
+            ) {
+                result[resultIndex] = i;
+                resultIndex++;
+            }
+        }
+
+        return result;
     }
 
 
@@ -188,27 +259,6 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
-    }
-
-    function add (uint256 a, uint256 b) public pure returns (uint256) {
-        return a + b;
-    }
-
-    // playground functions
-    function version() public pure returns (uint256) {
-        return 1;
-    }
-
-    function getNum() public view returns (uint256) {
-        return _num;
-    }
-
-    function setNum(uint256 num) public {
-        _num = num;
-    }
-
-    function incrementNum() public {
-        _num++;
     }
 
     function blocktime() public view returns (uint256) {
