@@ -3,8 +3,11 @@ package utils
 import (
 	"bufio"
 	"errors"
+	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
 func LoadSecrets(filename string) error {
@@ -27,4 +30,18 @@ func LoadSecrets(filename string) error {
 	}
 
 	return scanner.Err()
+}
+
+func GetContractABI(path string) (*abi.ABI, error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+
+	parsedABI, err := abi.JSON(strings.NewReader(string(data)))
+	if err != nil {
+		return nil, err
+	}
+
+	return &parsedABI, nil
 }

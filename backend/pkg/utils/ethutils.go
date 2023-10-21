@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/ecdsa"
+	"fmt"
 	"log"
 	"math/big"
 
@@ -107,4 +108,32 @@ func KeyStringToPrivateKey(key string) (*ecdsa.PrivateKey, error) {
 
 func EncodePacked(input ...[]byte) []byte {
 	return bytes.Join(input, nil)
+}
+
+func NewTransaction(client *ethclient.Client, from, to common.Address, value *big.Int, data []byte) (*types.Transaction, error) {
+	// Estimate gas price
+	gasPrice, err := client.SuggestGasPrice(context.Background())
+	if err != nil {
+		return nil, fmt.Errorf("failed to suggest gas price: %v", err)
+	}
+
+	// Get the nonce
+	nonce, err := client.PendingNonceAt(context.Background(), from)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get nonce: %v", err)
+	}
+
+	// Estimate gas limit.
+	gasLimit, err := client.EstimateGas(context.Background(), ethereum.CallMsg{
+		From:  from,
+		To:    &to,
+		Gas:   0,
+		Value: value,
+		Data:  data,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("failed to estimate gas limit: %v", err)
+	}
+
+	return types.NewTransaction(nonce, to, big.NewInt(0), gasLimit, gasPrice, data), nil
 }
