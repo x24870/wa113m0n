@@ -17,7 +17,6 @@ import (
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/ethereum/go-ethereum/rpc"
 	"github.com/robfig/cron/v3"
 	"gopkg.in/yaml.v2"
 )
@@ -37,26 +36,23 @@ type Config struct {
 type ToBeSickListRet = []*big.Int
 
 var (
-	rpcClient    *rpc.Client
 	client       *ethclient.Client
 	chainID      *big.Int
 	parsedABI    *abi.ABI
+	ownerKey     *ecdsa.PrivateKey
+	ownerAddr    common.Address
 	wallemonAddr common.Address
 )
 
 func init() {
-	// err := utils.LoadSecrets("config/.secrets")
-	// if err != nil {
-	// 	panic(fmt.Errorf("failed to load secrets: %v", err))
-	// }
-
 	var err error
-	rpcClient, err = rpc.Dial("http://127.0.0.1:8545")
+	err = utils.LoadSecrets("config/.secrets")
 	if err != nil {
-		panic(fmt.Errorf("failed to connect to the rpc Ethereum client: %v", err))
+		panic(fmt.Errorf("failed to load secrets: %v", err))
 	}
 
-	client, err = ethclient.Dial("http://127.0.0.1:8545")
+	// client, err = ethclient.Dial("http://127.0.0.1:8545")
+	client, err = ethclient.Dial("http://host.docker.internal:8545")
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to the Ethereum client: %v", err))
 	}
@@ -66,11 +62,21 @@ func init() {
 		panic(fmt.Errorf("failed to get network ID: %v", err))
 	}
 
-	// parsedABI, err = utils.GetContractABI("../config/abi.json")
-	parsedABI, err = utils.GetContractABI("../../config/abi.json")
+	parsedABI, err = utils.GetContractABI("./config/abi.json")
+	// parsedABI, err = utils.GetContractABI("../../config/abi.json")
 	if err != nil {
 		panic(fmt.Errorf("failed to parse contract ABI: %v", err))
 	}
+
+	k := os.Getenv("SIGNER_KEY")
+	if k[:2] == "0x" {
+		k = k[2:]
+	}
+	ownerKey, err = crypto.HexToECDSA(k)
+	if err != nil {
+		panic(fmt.Errorf("failed to get signer: %v", err))
+	}
+	ownerAddr = crypto.PubkeyToAddress(ownerKey.PublicKey)
 
 	wallemonAddr = common.HexToAddress("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512")
 }
@@ -83,18 +89,12 @@ func main() {
 
 	c := cron.New()
 	// c.AddFunc("@every 6h", func() {
+	// fmt.Println(cfg.Database.Host)
 	// 	sendEthTransaction()
 	// })
-	c.AddFunc("@every 3s", func() {
-		// fmt.Println(cfg.Database.Host)
-		fmt.Println("get to be sick list")
-		// ret, err := getToBeSickList(rpcClient)
-		ret, err := getToBeSickList(client)
-		if err != nil {
-			log.Fatal(err)
 
-		}
-		fmt.Println(ret)
+	c.AddFunc("@every 3s", func() {
+		sickBot()
 	})
 	c.Start()
 	defer c.Stop()
@@ -106,8 +106,26 @@ func main() {
 
 }
 
-// func getToBeSickList(client *rpc.Client) (ToBeSickListRet, error) {
-func getToBeSickList(client *ethclient.Client) (ToBeSickListRet, error) {
+func sickBot() {
+	ret, err := toBeSickList(client)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(ret)
+	if len(ret) == 0 {
+		fmt.Println("No one is sick.")
+		return
+	}
+
+	err = batchSick(ret)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
+func toBeSickList(client *ethclient.Client) (ToBeSickListRet, error) {
 	data, err := parsedABI.Pack("toBeSickList")
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack ABI call: %v", err)
@@ -120,22 +138,50 @@ func getToBeSickList(client *ethclient.Client) (ToBeSickListRet, error) {
 	}
 
 	res, err := client.CallContract(context.Background(), callArgs, nil)
-	fmt.Println(res)
-	return nil, nil
+	if err != nil {
+		return nil, fmt.Errorf("failed to call contract: %v", err)
+	}
+	if len(res) == 0 {
+		return nil, nil
+	}
 
-	// result := []byte{}
-	// err = rpcClient.Call(&result, "eth_call", callArgs, "latest")
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to call contract: %v", err)
-	// }
+	var ret ToBeSickListRet
+	err = parsedABI.UnpackIntoInterface(&ret, "toBeSickList", res)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack ABI call: %v", err)
+	}
 
-	// var ret ToBeSickListRet
-	// err = parsedABI.UnpackIntoInterface(&ret, "toBeSickList", result)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("failed to unpack result: %v", err)
-	// }
+	return ret, nil
+}
 
-	// return ret, nil
+func batchSick(list ToBeSickListRet) error {
+	// Prepare the method input parameters.
+	params, err := parsedABI.Pack("batchSick", list)
+	if err != nil {
+		return fmt.Errorf("failed to pack ABI call: %v", err)
+	}
+
+	// New transaction
+	tx, err := utils.NewTransaction(client, ownerAddr, wallemonAddr, nil, params)
+	if err != nil {
+		return fmt.Errorf("failed to create transaction: %v", err)
+	}
+
+	// Sign the transaction.
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), ownerKey)
+	if err != nil {
+		return fmt.Errorf("failed to sign transaction: %v", err)
+	}
+
+	// Broadcast the transaction.
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return fmt.Errorf("failed to send transaction: %v", err)
+	}
+
+	fmt.Printf("Sent Transaction: %s\n", signedTx.Hash().Hex())
+
+	return nil
 }
 
 func loadConfig(filename string) (*Config, error) {

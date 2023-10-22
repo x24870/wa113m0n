@@ -24,7 +24,8 @@ setReferralOwner:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "setOwner(address)()" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 reveal:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} ${CONTRACT} "setRevealed(bool)()" true
-
+toBeSickList:
+	cast call --rpc-url=${LOCALHOST} ${CONTRACT} "toBeSickList()(uint256[])"
 
 # upgrade
 upgrade:
