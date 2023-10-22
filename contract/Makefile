@@ -44,9 +44,9 @@ kill:
 	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "kill(uint256)" 0
 # view calls
 getHealth:
-	cast call ${CONTRACT} "getHealth(uint256)(uint256)" 0
+	cast call ${CONTRACT} "health(uint256)(uint256)" 0
 getLastMealTime:
-	cast call ${CONTRACT} "getLastMealTime(uint256)(uint256)" 0
+	cast call ${CONTRACT} "lastMealTime(uint256)(uint256)" 0
 
 # uri calls
 tokenUri:

@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"fmt"
-	"log"
 	"math/big"
 	"os/signal"
 
@@ -96,6 +95,11 @@ func main() {
 	c.AddFunc("@every 3s", func() {
 		sickBot()
 	})
+
+	c.AddFunc("@every 3s", func() {
+		killBot()
+	})
+
 	c.Start()
 	defer c.Stop()
 
@@ -125,6 +129,25 @@ func sickBot() {
 	}
 }
 
+func killBot() {
+	ret, err := toBeDeadkList(client)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Println(ret)
+	if len(ret) == 0 {
+		fmt.Println("No one is dead.")
+		return
+	}
+
+	err = batachKill(ret)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
 func toBeSickList(client *ethclient.Client) (ToBeSickListRet, error) {
 	data, err := parsedABI.Pack("toBeSickList")
 	if err != nil {
@@ -132,7 +155,7 @@ func toBeSickList(client *ethclient.Client) (ToBeSickListRet, error) {
 	}
 
 	callArgs := ethereum.CallMsg{
-		From: common.HexToAddress("0x70997970C51812dc3A010C7d01b50e0d17dc79C8"),
+		From: ownerAddr,
 		To:   &wallemonAddr,
 		Data: data,
 	}
@@ -184,6 +207,65 @@ func batchSick(list ToBeSickListRet) error {
 	return nil
 }
 
+func toBeDeadkList(client *ethclient.Client) (ToBeSickListRet, error) {
+	data, err := parsedABI.Pack("toBeDeadList")
+	if err != nil {
+		return nil, fmt.Errorf("failed to pack ABI call: %v", err)
+	}
+
+	callArgs := ethereum.CallMsg{
+		From: ownerAddr,
+		To:   &wallemonAddr,
+		Data: data,
+	}
+
+	res, err := client.CallContract(context.Background(), callArgs, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to call contract: %v", err)
+	}
+	if len(res) == 0 {
+		return nil, nil
+	}
+
+	var ret ToBeSickListRet
+	err = parsedABI.UnpackIntoInterface(&ret, "toBeDeadList", res)
+	if err != nil {
+		return nil, fmt.Errorf("failed to unpack ABI call: %v", err)
+	}
+
+	return ret, nil
+}
+
+func batachKill(list ToBeSickListRet) error {
+	// Prepare the method input parameters.
+	params, err := parsedABI.Pack("batachKill", list)
+	if err != nil {
+		return fmt.Errorf("failed to pack ABI call: %v", err)
+	}
+
+	// New transaction
+	tx, err := utils.NewTransaction(client, ownerAddr, wallemonAddr, nil, params)
+	if err != nil {
+		return fmt.Errorf("failed to create transaction: %v", err)
+	}
+
+	// Sign the transaction.
+	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), ownerKey)
+	if err != nil {
+		return fmt.Errorf("failed to sign transaction: %v", err)
+	}
+
+	// Broadcast the transaction.
+	err = client.SendTransaction(context.Background(), signedTx)
+	if err != nil {
+		return fmt.Errorf("failed to send transaction: %v", err)
+	}
+
+	fmt.Printf("Sent Transaction: %s\n", signedTx.Hash().Hex())
+
+	return nil
+}
+
 func loadConfig(filename string) (*Config, error) {
 	buf, err := os.ReadFile(filename)
 	if err != nil {
@@ -197,55 +279,4 @@ func loadConfig(filename string) (*Config, error) {
 	}
 
 	return &cfg, nil
-}
-
-func sendEthTransaction() {
-	client, err := ethclient.Dial("YOUR_ETHEREUM_NODE_URL")
-	if err != nil {
-		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
-	}
-
-	privateKey, err := crypto.HexToECDSA("YOUR_PRIVATE_KEY")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	publicKey := privateKey.Public()
-	publicKeyECDSA, ok := publicKey.(*ecdsa.PublicKey)
-	if !ok {
-		log.Fatal("error casting public key to ECDSA")
-	}
-
-	fromAddress := crypto.PubkeyToAddress(*publicKeyECDSA)
-	nonce, err := client.PendingNonceAt(context.Background(), fromAddress)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	value := big.NewInt(1000000000000000000) // in wei (1 eth)
-	gasLimit := uint64(21000)
-	gasPrice, err := client.SuggestGasPrice(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	toAddress := common.HexToAddress("RECIPIENT_ETHEREUM_ADDRESS")
-	tx := types.NewTransaction(nonce, toAddress, value, gasLimit, gasPrice, nil)
-
-	chainID, err := client.NetworkID(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	signedTx, err := types.SignTx(tx, types.NewEIP155Signer(chainID), privateKey)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	err = client.SendTransaction(context.Background(), signedTx)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	log.Printf("Sent transaction: %s", signedTx.Hash().Hex())
 }
