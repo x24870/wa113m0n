@@ -18,7 +18,7 @@ run-db:
 
 
 docker-compose:
-	docker-compose up -d -f docker-compose.yaml
+	docker-compose -f docker-compose.yaml up
 
 build-bot:
 	docker build -f dockerfile-bot -t $(BOT_IMAGE) .

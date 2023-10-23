@@ -35,7 +35,7 @@ func (u *User) Indexes() []CustomIndex {
 			Unique:    true,
 			Fields:    []string{"email"},
 			Type:      "",
-			Condition: " WHERE disabled = false",
+			Condition: "",
 		},
 	}
 }
