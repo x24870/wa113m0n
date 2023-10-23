@@ -12,6 +12,10 @@ type Referral struct {
 	Count  uint      `gorm:"column:count;type:integer;not null"`
 }
 
+func init() {
+	registerModelForAutoMigration(&Referral{})
+}
+
 func (t *Referral) TableName() string {
 	return "referral"
 }

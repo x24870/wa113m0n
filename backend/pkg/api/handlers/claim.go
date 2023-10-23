@@ -32,7 +32,7 @@ func Claim(c *gin.Context) {
 	}
 
 	// check if address is valid EVM address
-	if len(gq.Address) < 42 {
+	if len(gq.Address) != 42 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid address."})
 		return
 	}
@@ -71,6 +71,9 @@ func Claim(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Sign error."})
 		return
 	}
+
+	// modify last byte of signature to make it compatible with EVM
+	signature[64] += 27
 
 	// return hex string signature
 	c.JSON(http.StatusOK, gin.H{"signature": hex.EncodeToString(signature)})

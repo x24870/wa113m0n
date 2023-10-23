@@ -13,6 +13,10 @@ type User struct {
 	Address string `gorm:"column:address;type:varchar(256);not null"`
 }
 
+func init() {
+	registerModelForAutoMigration(&User{})
+}
+
 func (u *User) TableName() string {
 	return "user"
 }

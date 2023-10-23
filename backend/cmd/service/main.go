@@ -25,7 +25,8 @@ func init() {
 	// gormdb, err = gormpkg.NewGormPostgresConn(
 	// 	gormpkg.Config{
 	// 		// DSN:             config.GetDBArg(),
-	// 		DSN:             "postgres://user:user@db:5432/wallemon?sslmode=disable", //TODO: use config
+	// 		// DSN:             "postgres://user:user@db:5432/wallemon?sslmode=disable", //TODO: use config
+	// 		DSN:             "postgres://user:user@localhost:5432/postgres?sslmode=disable", //TODO: use config
 	// 		MaxIdleConns:    2,
 	// 		MaxOpenConns:    2,
 	// 		ConnMaxLifetime: 10 * time.Minute,
@@ -33,7 +34,7 @@ func init() {
 	// 	},
 	// )
 	// if err != nil {
-	// 	panic(fmt.Errorf("failed to init db"))
+	// 	panic(fmt.Errorf("failed to init db, err: %v", err))
 	// }
 
 	err = utils.LoadSecrets("config/.secrets")
@@ -59,5 +60,6 @@ func main() {
 	api.SetupRoutes(r)
 
 	// Start the server on port 8080
-	r.Run(":8080")
+	// r.Run(":8080")
+	r.Run(":80")
 }

@@ -1,12 +1,18 @@
 package models
 
-import uuid "github.com/satori/go.uuid"
+import (
+	uuid "github.com/satori/go.uuid"
+)
 
 type Gem struct {
 	Base
 
 	ID     uuid.UUID `gorm:"column:id;primary_key;type:uuid;default:uuid_generate_v4()"`
 	Amount uint      `gorm:"column:amount;type:integer;not null"`
+}
+
+func init() {
+	registerModelForAutoMigration(&Gem{})
 }
 
 func (t *Gem) TableName() string {
