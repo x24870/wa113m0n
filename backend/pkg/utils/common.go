@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/ethereum/go-ethereum/accounts/abi"
@@ -44,4 +45,10 @@ func GetContractABI(path string) (*abi.ABI, error) {
 	}
 
 	return &parsedABI, nil
+}
+
+func IsValidEmail(email string) bool {
+	const emailRegex = `^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$`
+	re := regexp.MustCompile(emailRegex)
+	return re.MatchString(email)
 }

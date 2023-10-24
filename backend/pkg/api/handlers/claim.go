@@ -19,26 +19,26 @@ type ClaimReq struct {
 
 // Claim - Handler to claim a wallemon
 func Claim(c *gin.Context) {
-	var gq ClaimReq
+	var req ClaimReq
 
-	if err := c.ShouldBindJSON(&gq); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	// check 0x prefix, if not present, add it
-	if gq.Address[:2] != "0x" {
-		gq.Address = "0x" + gq.Address
+	if req.Address[:2] != "0x" {
+		req.Address = "0x" + req.Address
 	}
 
 	// check if address is valid EVM address
-	if len(gq.Address) != 42 {
+	if len(req.Address) != 42 {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid address."})
 		return
 	}
 
 	// check if refCode is valid, for now, just check if it's 'wallemon'
-	if gq.RefCode != "wallemon" {
+	if req.RefCode != "wallemon" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid referral code."})
 		return
 	}
@@ -61,8 +61,8 @@ func Claim(c *gin.Context) {
 	}
 
 	// sign
-	to := common.HexToAddress(gq.Address)
-	msg := utils.EncodePacked(to.Bytes(), []byte(gq.RefCode))
+	to := common.HexToAddress(req.Address)
+	msg := utils.EncodePacked(to.Bytes(), []byte(req.RefCode))
 	msgHash := crypto.Keccak256(msg)
 	signedMsg := utils.EncodePacked([]byte("\x19Ethereum Signed Message:\n32"), msgHash)
 	signedMsgHash := crypto.Keccak256(signedMsg)
@@ -77,4 +77,26 @@ func Claim(c *gin.Context) {
 
 	// return hex string signature
 	c.JSON(http.StatusOK, gin.H{"signature": hex.EncodeToString(signature)})
+}
+
+type JoinWaitlistReq struct {
+	Email string `json:"email"`
+}
+
+// JoinWaitlist - Handler to join waitlist
+func JoinWaitlist(c *gin.Context) {
+	var req JoinWaitlistReq
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// check if email is valid
+	if !utils.IsValidEmail(req.Email) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email."})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "success"})
 }

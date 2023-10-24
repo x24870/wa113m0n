@@ -1,7 +1,10 @@
 package gorm
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
+	"runtime/debug"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
@@ -45,4 +48,45 @@ func NewGormPostgresConn(config Config) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(config.ConnMaxLifetime)
 
 	return db, nil
+}
+
+// Transaction wraps the database transaction and to proper error handling.
+func Transaction(db *gorm.DB, body func(*gorm.DB) error) (err error) {
+	tx := db.Begin()
+	if tx.Error != nil {
+		return fmt.Errorf("Transaction: Cannot open transaction %v", tx.Error)
+	}
+
+	// Handle runtime.Goexit. err won't be set when Goexit is called in body.
+	errDefault := errors.New("init")
+	err = errDefault
+
+	// Error checking and panic safenet.
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			err = fmt.Errorf("Transaction: rollback due to panic: %v, %s",
+				recovered, string(debug.Stack()))
+		}
+
+		if err != nil {
+			rollbackErr := tx.Rollback().Error
+			if rollbackErr == nil || errors.Is(err, sql.ErrTxDone) {
+				return
+			}
+			err = fmt.Errorf("Transaction: rollback due to error: %v, %w", err, rollbackErr)
+			return
+		}
+	}()
+
+	// Execute main body.
+	if err = body(tx); err != nil {
+		return err
+	}
+
+	err = tx.Commit().Error
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

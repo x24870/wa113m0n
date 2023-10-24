@@ -2,7 +2,13 @@ package models
 
 import (
 	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
 )
+
+type UserInft interface {
+	GetEmail()
+	GetAddress()
+}
 
 type User struct {
 	Base
@@ -38,4 +44,23 @@ func (u *User) Indexes() []CustomIndex {
 			Condition: "",
 		},
 	}
+}
+
+func NewUser(email string, address string) *User {
+	return &User{
+		Email:   email,
+		Address: address,
+	}
+}
+
+func (u *User) GetEmail() string {
+	return u.Email
+}
+
+func (u *User) GetAddress() string {
+	return u.Address
+}
+
+func (u *User) CreateIfNotExists(db *gorm.DB) error {
+	return db.Where("email = ?", u.Email).FirstOrCreate(u).Error
 }
