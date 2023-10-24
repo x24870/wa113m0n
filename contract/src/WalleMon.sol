@@ -50,11 +50,11 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _referral = Referral(referral);
         _refOwner = initialOwner;
         _revealed = false;
-        _eggURI = "https://ipfs.blocto.app/ipfs/Qmbnvcgrwjo9amrTGy9kc5VDejYN1ZyrLckXQFoMkDRS9B";
+        _eggURI = "https://ipfs.blocto.app/ipfs/QmZpyCWdehFknvkH9YvdhGk6TNTv8bsA36GLyWvp4nP1QA/egg.json";
     }
 
     function _baseURI() internal pure override returns (string memory) {
-        return "https://ipfs.blocto.app/ipfs/Qmbnvcgrwjo9amrTGy9kc5VDejYN1ZyrLckXQFoMkDRS9B";
+        return "https://ipfs.blocto.app/ipfs/QmZpyCWdehFknvkH9YvdhGk6TNTv8bsA36GLyWvp4nP1QA/dog.json";
     }
 
     function setEggURI(string calldata eggURI) public onlyOwner {
