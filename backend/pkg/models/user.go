@@ -6,11 +6,16 @@ import (
 )
 
 type UserInft interface {
-	GetEmail()
-	GetAddress()
+	GetID() uuid.UUID
+	GetEmail() string
+	GetAddress() string
+	Create(db *gorm.DB) (UserInft, error)
 }
 
-type User struct {
+// User is the exported static model interface.
+var User user
+
+type user struct {
 	Base
 
 	ID    uuid.UUID `gorm:"column:id;primary_key;type:uuid;default:uuid_generate_v4()"`
@@ -20,14 +25,14 @@ type User struct {
 }
 
 func init() {
-	registerModelForAutoMigration(&User{})
+	registerModelForAutoMigration(&user{})
 }
 
-func (u *User) TableName() string {
+func (u *user) TableName() string {
 	return "user"
 }
 
-func (u *User) Indexes() []CustomIndex {
+func (u *user) Indexes() []CustomIndex {
 	return []CustomIndex{
 		{
 			Name:      "created_at_idx",
@@ -46,21 +51,45 @@ func (u *User) Indexes() []CustomIndex {
 	}
 }
 
-func NewUser(email string, address string) *User {
-	return &User{
+func NewUser(email string, address string) UserInft {
+	u := user{
 		Email:   email,
 		Address: address,
 	}
+
+	return &u
 }
 
-func (u *User) GetEmail() string {
+func (u *user) GetID() uuid.UUID {
+	return u.ID
+}
+
+func (u *user) GetEmail() string {
 	return u.Email
 }
 
-func (u *User) GetAddress() string {
+func (u *user) GetAddress() string {
 	return u.Address
 }
 
-func (u *User) CreateIfNotExists(db *gorm.DB) error {
-	return db.Where("email = ?", u.Email).FirstOrCreate(u).Error
+func (u *user) GetByEmail(db *gorm.DB, email string) (UserInft, error) {
+	if err := db.Where("email = ?", email).First(u).Error; err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+// Create
+func (u *user) Create(db *gorm.DB) (UserInft, error) {
+	if err := db.Create(u).Error; err != nil {
+		return nil, err
+	}
+	return u, nil
+}
+
+func (u *user) CreateIfNotExists(db *gorm.DB) (UserInft, error) {
+	if err := db.Where("email = ?", u.Email).FirstOrCreate(u).Error; err != nil {
+		return nil, err
+	}
+	return u, nil
 }

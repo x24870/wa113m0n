@@ -38,13 +38,6 @@ func AutoMigrate(db *gorm.DB) error {
 		return tx.Error
 	}
 
-	// Create uuid-ossp extension.
-	err := tx.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`).Error
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
 	// Perform migration on models.
 	for _, model := range models {
 		err := tx.AutoMigrate(model)

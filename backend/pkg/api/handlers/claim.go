@@ -5,11 +5,15 @@ import (
 	"net/http"
 	"os"
 
+	"wallemon/pkg/database"
+	"wallemon/pkg/models"
 	utils "wallemon/pkg/utils"
 
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/gin-gonic/gin"
+	uuid "github.com/satori/go.uuid"
+	"gorm.io/gorm"
 )
 
 type ClaimReq struct {
@@ -87,7 +91,7 @@ type JoinWaitlistReq struct {
 func JoinWaitlist(c *gin.Context) {
 	var req JoinWaitlistReq
 
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.BindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
@@ -96,6 +100,33 @@ func JoinWaitlist(c *gin.Context) {
 	if !utils.IsValidEmail(req.Email) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email."})
 		return
+	}
+
+	db := database.GetSQL()
+	// check if email already exists
+	_, err := models.User.GetByEmail(db, req.Email)
+	if err != nil && err != gorm.ErrRecordNotFound {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
+		return
+	}
+
+	err = database.Transaction(db, func(tx *gorm.DB) error {
+		// create user
+		user := models.NewUser(req.Email, "")
+		user, err := user.Create(db)
+		if err != nil {
+			return err
+		}
+		// create waitlist
+		wl := models.NewWaitlist(user.GetID(), uuid.Nil)
+		if _, err := wl.Create(db); err != nil {
+			return err
+		}
+
+		return nil
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "success"})
