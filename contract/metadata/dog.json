@@ -1,0 +1,16 @@
+{
+    "name": "Hellhound",
+    "description": "bad dog!",
+    "image": "https://ipfs.blocto.app/ipfs/QmUzrjdEGfNU3fWmva4M5wmPoDWS5JeNs4aN1AVCngYrmm",
+    "attributes": [
+      {
+        "trait_type": "Rarity",
+        "value": "Legendary"
+      },
+      {
+        "trait_type": "Strength",
+        "value": 100
+      }
+    ]
+  }
+  

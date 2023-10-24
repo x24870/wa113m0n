@@ -5,11 +5,11 @@
     "attributes": [
       {
         "trait_type": "Rarity",
-        "value": "Legendary"
+        "value": "Common"
       },
       {
         "trait_type": "Strength",
-        "value": 100
+        "value": 0
       }
     ]
   }
