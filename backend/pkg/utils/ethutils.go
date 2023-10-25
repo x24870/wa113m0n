@@ -137,3 +137,39 @@ func NewTransaction(client *ethclient.Client, from, to common.Address, value *bi
 
 	return types.NewTransaction(nonce, to, big.NewInt(0), gasLimit, gasPrice, data), nil
 }
+
+func VerifySignature(address common.Address, message string, signature []byte) (bool, error) {
+	// hash the message
+	hash := crypto.Keccak256Hash([]byte(message))
+
+	// recover the public key
+	pubkeyECDSA, err := crypto.Ecrecover(hash.Bytes(), signature)
+	if err != nil {
+		return false, fmt.Errorf("failed to recover public key: %v", err)
+	}
+
+	// []byte to ecdsa.PublicKey
+	pubkey, err := crypto.UnmarshalPubkey(pubkeyECDSA)
+	if err != nil {
+		return false, fmt.Errorf("failed to unmarshal public key: %v", err)
+	}
+
+	// obtain the address from the public key
+	addr := crypto.PubkeyToAddress(*pubkey).Hex()
+
+	return addr == address.Hex(), nil
+}
+
+func SignatureToBytes(signature string) ([]byte, error) {
+	// decompose the signature
+	signatureBytes := common.FromHex(signature)
+	if len(signatureBytes) != 65 {
+		return nil, fmt.Errorf("signature must be 65 bytes long")
+	}
+
+	// Ethereum uses `V` values of 27 or 28.
+	// `go-ethereum` uses 0 or 1. Let's convert.
+	signatureBytes[64] -= 27
+
+	return signatureBytes, nil
+}

@@ -78,7 +78,6 @@ func (u *user) GetByEmail(db *gorm.DB, email string) (UserInft, error) {
 	return u, nil
 }
 
-// Create
 func (u *user) Create(db *gorm.DB) (UserInft, error) {
 	if err := db.Create(u).Error; err != nil {
 		return nil, err
