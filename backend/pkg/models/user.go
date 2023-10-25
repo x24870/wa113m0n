@@ -56,7 +56,6 @@ func NewUser(email string, address string) UserInft {
 		Email:   email,
 		Address: address,
 	}
-
 	return &u
 }
 

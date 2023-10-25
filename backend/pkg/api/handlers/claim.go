@@ -104,9 +104,13 @@ func JoinWaitlist(c *gin.Context) {
 
 	db := database.GetSQL()
 	// check if email already exists
-	_, err := models.User.GetByEmail(db, req.Email)
+	user, err := models.User.GetByEmail(db, req.Email)
 	if err != nil && err != gorm.ErrRecordNotFound {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
+		return
+	}
+	if user != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Email already exists."})
 		return
 	}
 
