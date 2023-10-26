@@ -21,6 +21,10 @@ type ClaimReq struct {
 	RefCode string `json:"ref_code"` // Referral code
 }
 
+type ClaimResp struct {
+	Signature string `json:"signature"`
+}
+
 // Claim - Handler to claim a wallemon
 func Claim(c *gin.Context) {
 	var req ClaimReq
@@ -80,11 +84,15 @@ func Claim(c *gin.Context) {
 	signature[64] += 27
 
 	// return hex string signature
-	c.JSON(http.StatusOK, gin.H{"signature": hex.EncodeToString(signature)})
+	c.JSON(http.StatusOK, ClaimResp{Signature: hex.EncodeToString(signature)})
 }
 
 type JoinWaitlistReq struct {
 	Email string `json:"email"`
+}
+
+type JoinWaitlistResp struct {
+	Message string `json:"message"`
 }
 
 // JoinWaitlist - Handler to join waitlist
@@ -133,5 +141,5 @@ func JoinWaitlist(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "success"})
+	c.JSON(http.StatusOK, JoinWaitlistResp{Message: "success"})
 }

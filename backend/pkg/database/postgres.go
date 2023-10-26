@@ -22,7 +22,7 @@ func (db *postgresDB) initialize(ctx context.Context) {
 			// DSN:             config.GetDBArg(),
 			// DSN:             "postgres://user:user@db:5432/wallemon?sslmode=disable", //TODO: use config
 			DSN: "postgres://user:user@db:5432/postgres?sslmode=disable", //TODO: use config
-			// DSN:             "host=db port=5432 user=user password=user dbname=postgres sslmode=disable binary_parameters=yes",
+			// DSN:             "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
 			MaxIdleConns:    2,
 			MaxOpenConns:    2,
 			ConnMaxLifetime: 10 * time.Minute,
