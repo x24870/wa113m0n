@@ -65,10 +65,55 @@ func main() {
 		return
 	}
 	fmt.Println("Play response:", playResp)
+
+	// GetPoop request
+	getPoopResp, err := getPoopRequest("0") // Provide the appropriate token_id value.
+	if err != nil {
+		fmt.Println("Error in GetPoop request:", err)
+		return
+	}
+	fmt.Println("GetPoop response:", getPoopResp)
+
+	// GetClean request
+	getCleanResp, err := getCleanRequest("0x70997970C51812dc3A010C7d01b50e0d17dc79C8") // Provide the appropriate address value.
+	if err != nil {
+		fmt.Println("Error in GetClean request:", err)
+		return
+	}
+	fmt.Println("GetClean response:", getCleanResp)
+
+	var resp2 hdlr.GetCleanResp
+	err = json.Unmarshal([]byte(getCleanResp), &resp2)
+	if err != nil {
+		fmt.Println("Error in unmarshalling GetClean response:", err)
+		return
+	}
+
+	// Clean request
+	msgHash = crypto.Keccak256([]byte(resp2.Message))
+	sig, err = crypto.Sign(msgHash, privateKey)
+	if err != nil {
+		fmt.Println("Error in signing:", err)
+		return
+	}
+
+	// modify the signature to match the format in the backend
+	sig[64] += 27
+
+	cleanResp, err := cleanRequest(uint(tokenID), addr, hex.EncodeToString(sig)) // Provide appropriate values.
+	if err != nil {
+		fmt.Println("Error in Clean request:", err)
+		return
+	}
+	fmt.Println("Clean response:", cleanResp)
+
 }
 
 func getGemRequest(tokenID string) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, baseURL+"/gem", nil) // Adjust the endpoint as needed.
+	if err != nil {
+		return "", err
+	}
 	req.Header.Set("token_id", tokenID)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -85,6 +130,9 @@ func getGemRequest(tokenID string) (string, error) {
 
 func getPlayRequest(address string) (string, error) {
 	req, err := http.NewRequest(http.MethodGet, baseURL+"/play", nil) // Adjust the endpoint as needed.
+	if err != nil {
+		return "", err
+	}
 	req.Header.Set("address", address)
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -111,6 +159,68 @@ func playRequest(tokenID uint, address, signature string) (string, error) {
 	}
 
 	resp, err := http.Post(baseURL+"/play", "application/json", bytes.NewBuffer(jsonData)) // Adjust the endpoint as needed.
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func getPoopRequest(tokenID string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, baseURL+"/poop", nil) // Adjust the endpoint as needed.
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("token_id", tokenID)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func getCleanRequest(address string) (string, error) {
+	req, err := http.NewRequest(http.MethodGet, baseURL+"/clean", nil) // Adjust the endpoint as needed.
+	if err != nil {
+		return "", err
+	}
+	req.Header.Set("address", address)
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	return string(body), nil
+}
+
+func cleanRequest(tokenID uint, address, signature string) (string, error) {
+	data := map[string]interface{}{
+		"token_id":  tokenID,
+		"address":   address,
+		"signature": signature,
+	}
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := http.Post(baseURL+"/clean", "application/json", bytes.NewBuffer(jsonData)) // Adjust the endpoint as needed.
 	if err != nil {
 		return "", err
 	}

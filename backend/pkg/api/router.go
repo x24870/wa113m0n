@@ -32,5 +32,7 @@ func SetupRoutes(r *gin.Engine) {
 	r.GET("/gem", hdlr.GetGem)
 	r.GET("/play", hdlr.GetPlay)
 	r.POST("/play", middleware.MaxBodySize(1024), hdlr.Play)
-
+	r.GET("/poop", hdlr.GetPoop)
+	r.GET("/clean", hdlr.GetClean)
+	r.POST("/clean", middleware.MaxBodySize(1024), hdlr.Clean)
 }
