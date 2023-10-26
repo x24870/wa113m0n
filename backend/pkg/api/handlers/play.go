@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"strconv"
 
 	"wallemon/pkg/database"
 	"wallemon/pkg/models"
@@ -15,24 +16,36 @@ import (
 const playMessage = "Let's play!"
 
 type GetGemReq struct {
-	Address string `json:"address"`
-	TokenID uint   `json:"token_id"`
+	TokenID uint `json:"token_id"`
+}
+
+type GetGemResp struct {
+	Amount uint `json:"amount"`
 }
 
 // GetGem - Handler to get the gem of a user
 func GetGem(c *gin.Context) {
-	var req GetGemReq
-
-	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	id := c.Request.Header.Get("token_id")
+	if id == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "token_id is required"})
 		return
+	}
+
+	val, err := strconv.ParseUint(id, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "token_id is invalid"})
+		return
+	}
+
+	req := GetGemReq{
+		TokenID: uint(val),
 	}
 
 	// TODO: maybe check if this address owns this token
 
 	db := database.GetSQL()
 	t := models.NewToken(req.TokenID)
-	t, err := t.CreateIfNotExists(db)
+	t, err = t.CreateIfNotExists(db)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -45,28 +58,41 @@ func GetGem(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusInternalServerError, gin.H{"amount": g.GetAmount()})
+	c.JSON(http.StatusOK, GetGemResp{
+		Amount: g.GetAmount(),
+	})
 }
 
 type GetPlayReq struct {
 	Address string `json:"address"`
 }
 
+type GetPlayResp struct {
+	Message string `json:"message"`
+}
+
 // GetPlay - Handler to generate play message for a user
 func GetPlay(c *gin.Context) {
-	var req GetPlayReq
-	if err := c.BindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	addr := c.Request.Header.Get("address")
+	if addr == "" {
+		// address is unused currently
+		c.JSON(http.StatusBadRequest, gin.H{"error": "address is required"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": playMessage})
+	c.JSON(http.StatusOK, GetPlayResp{
+		Message: playMessage,
+	})
 }
 
 type PlayReq struct {
 	TokenID   uint   `json:"token_id"`
 	Address   string `json:"address"`
 	Signature string `json:"signature"`
+}
+
+type PlayResp struct {
+	Message string `json:"message"`
 }
 
 func Play(c *gin.Context) {
@@ -93,7 +119,7 @@ func Play(c *gin.Context) {
 	}
 
 	if !valid {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid signature."})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "not signed by the given address"})
 		return
 	}
 
@@ -118,5 +144,7 @@ func Play(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "success"})
+	c.JSON(http.StatusOK, PlayResp{
+		Message: playMessage,
+	})
 }

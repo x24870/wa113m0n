@@ -28,9 +28,9 @@ func SetupRoutes(r *gin.Engine) {
 	r.POST("/claim", middleware.MaxBodySize(1024), hdlr.Claim)
 	r.POST("/joinWaitlist", middleware.MaxBodySize(1024), hdlr.JoinWaitlist)
 
-	// Register the gem handlers
-	gemGroup := r.Group("/gem")
-	{
-		gemGroup.GET("/gem", hdlr.GetGem)
-	}
+	// Register the play handlers
+	r.GET("/gem", hdlr.GetGem)
+	r.GET("/play", hdlr.GetPlay)
+	r.POST("/play", middleware.MaxBodySize(1024), hdlr.Play)
+
 }
