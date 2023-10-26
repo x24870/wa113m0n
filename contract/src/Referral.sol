@@ -45,13 +45,13 @@ contract Referral {
         referralAmount[_referralCode] = _amount;
     }
 
-    // 
+    // TODO: only wallemon can call
     function claim(address minter, string calldata _referralCode, bytes calldata signature) public {
         require(Strings.equal(claimed[minter], ""), "Referral: already claimed");
         require(verify(owner, minter, _referralCode, signature), 
             "Referral: invalid signature");
         require(referralAmount[_referralCode] > 0, "Referral: no amount left");
-        claimed[msg.sender] = _referralCode;
+        claimed[minter] = _referralCode;
         referralCount[_referralCode] += 1;
         referralAmount[_referralCode] -= 1;
     }
