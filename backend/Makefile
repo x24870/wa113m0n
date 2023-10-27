@@ -24,7 +24,12 @@ build-bot:
 	docker build -f dockerfile-bot -t $(BOT_IMAGE) .
 	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
 build-service:
-	docker build -f dockerfile-service -t $(SERVICE_IMAGE) .
+	@if [ "$(env)" = "local" ]; then \
+		echo "Build image for running locally"; \
+	else \
+		echo "Build image for running on GCP"; \
+	fi
+	docker build --build-arg ENV=$(env) -f dockerfile-service -t $(SERVICE_IMAGE) .
 	docker tag $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(IMAGE_TAG)
 
 

@@ -45,7 +45,7 @@ var (
 
 func init() {
 	var err error
-	err = utils.LoadSecrets("config/.secrets")
+	err = utils.LoadEnvConfig("config/.secrets")
 	if err != nil {
 		panic(fmt.Errorf("failed to load secrets: %v", err))
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 
@@ -17,8 +18,22 @@ type Greeting struct {
 	Message string `json:"message"`
 }
 
+var (
+	env string
+)
+
 func init() {
-	err := utils.LoadSecrets("config/.secrets")
+	env = os.Getenv("ENV")
+	if env != "local" {
+		env = "cloud"
+	}
+
+	err := utils.LoadEnvConfig("config/.env")
+	if err != nil {
+		panic(fmt.Errorf("failed to load config: %v", err))
+	}
+
+	err = utils.LoadEnvConfig("config/.secrets")
 	if err != nil {
 		panic(fmt.Errorf("failed to load secrets: %v", err))
 	}

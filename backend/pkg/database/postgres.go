@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"gorm.io/gorm"
@@ -17,12 +18,12 @@ type postgresDB struct{ *gorm.DB }
 // initialize initializes the PostgreSQL database handle.
 func (db *postgresDB) initialize(ctx context.Context) {
 	var err error
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%s/%s?sslmode=disable",
+		os.Getenv("DB_USERNAME"), os.Getenv("DB_PASSWORD"), os.Getenv("DB_HOST"), os.Getenv("DB_PORT"), os.Getenv("DB_NAME"))
+
 	db.DB, err = gormpkg.NewGormPostgresConn(
 		gormpkg.Config{
-			// DSN:             config.GetDBArg(),
-			// DSN:             "postgres://user:user@db:5432/wallemon?sslmode=disable", //TODO: use config
-			DSN: "postgres://user:user@db:5432/postgres?sslmode=disable", //TODO: use config
-			// DSN:             "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable",
+			DSN:             dsn,
 			MaxIdleConns:    2,
 			MaxOpenConns:    2,
 			ConnMaxLifetime: 10 * time.Minute,
@@ -30,7 +31,7 @@ func (db *postgresDB) initialize(ctx context.Context) {
 		},
 	)
 	if err != nil {
-		panic(fmt.Errorf("failed to init db, err: %v", err))
+		panic(fmt.Errorf("failed to init db, dsn: \n%v \nerr: %v", dsn, err))
 	}
 
 	// Perform database schema auto-migration.

@@ -20,8 +20,10 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o bot cmd/service/main.go
 
 # Final Stage
 FROM alpine
+# Set default env variable
+ARG ENV=cloud
 # Copy env files
-COPY config/env.yaml ./config/
+COPY config/.env.$ENV ./config/.env
 COPY config/.secrets ./config/
 # Ensure you copy the binary with the correct name
 COPY --from=builder /app/bot /app/bot

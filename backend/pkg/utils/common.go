@@ -2,7 +2,7 @@ package utils
 
 import (
 	"bufio"
-	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"regexp"
@@ -11,7 +11,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
 )
 
-func LoadSecrets(filename string) error {
+func LoadEnvConfig(filename string) error {
 	file, err := os.Open(filename)
 	if err != nil {
 		return err
@@ -22,8 +22,14 @@ func LoadSecrets(filename string) error {
 	for scanner.Scan() {
 		line := scanner.Text()
 		parts := strings.SplitN(line, "=", 2)
+
+		// if starts with #, skip
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
 		if len(parts) != 2 {
-			return errors.New("invalid .secret format")
+			return fmt.Errorf("%s invalid line: %s", filename, line)
 		}
 		key := parts[0]
 		value := parts[1]
