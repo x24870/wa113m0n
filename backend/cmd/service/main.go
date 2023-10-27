@@ -23,11 +23,6 @@ var (
 )
 
 func init() {
-	env = os.Getenv("ENV")
-	if env != "local" {
-		env = "cloud"
-	}
-
 	err := utils.LoadEnvConfig("config/.env")
 	if err != nil {
 		panic(fmt.Errorf("failed to load config: %v", err))
@@ -36,6 +31,11 @@ func init() {
 	err = utils.LoadEnvConfig("config/.secrets")
 	if err != nil {
 		panic(fmt.Errorf("failed to load secrets: %v", err))
+	}
+
+	env = os.Getenv("ENV")
+	if env != "local" {
+		env = "cloud"
 	}
 }
 
@@ -63,6 +63,9 @@ func main() {
 	api.SetupRoutes(r)
 
 	// Start the server on port 8080
-	r.Run(":8080")
-	// r.Run(":80")
+	if env == "local" {
+		r.Run(":8080")
+	} else {
+		r.Run(":80")
+	}
 }

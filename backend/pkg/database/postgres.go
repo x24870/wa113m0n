@@ -34,14 +34,14 @@ func (db *postgresDB) initialize(ctx context.Context) {
 		panic(fmt.Errorf("failed to init db, dsn: \n%v \nerr: %v", dsn, err))
 	}
 
-	// Perform database schema auto-migration.
-	if err := models.AutoMigrate(db.DB); err != nil {
-		panic(err)
-	}
-
 	// Load UUID extension if not loaded.
 	stmt := fmt.Sprintf("CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\"")
 	if err = db.DB.Exec(stmt).Error; err != nil {
+		panic(err)
+	}
+
+	// Perform database schema auto-migration.
+	if err := models.AutoMigrate(db.DB); err != nil {
 		panic(err)
 	}
 }
