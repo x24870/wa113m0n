@@ -21,18 +21,18 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o wallemon-service cmd/servi
 # Final Stage
 FROM alpine
 # Copy both env files into the image first
-COPY config/.env.local ./config/.env.local
-COPY config/.env.cloud ./config/.env.cloud
+COPY config/.env.service.local ./config/.env.service.local
+COPY config/.env.service.cloud ./config/.env.service.cloud
 
 # Use the argument to determine which file to rename
 ARG ENV=cloud
 RUN if [ "$ENV" = "local" ]; then \
-    mv ./config/.env.local ./config/.env; \
-    rm ./config/.env.cloud; \
+    mv ./config/.env.service.local ./config/.env; \
+    rm ./config/.env.service.cloud; \
 else \
-    mv ./config/.env.cloud ./config/.env; \
+    mv ./config/.env.service.cloud ./config/.env; \
     # Optionally, you can remove the other file if not needed:
-    rm ./config/.env.local; \
+    rm ./config/.env.service.local; \
 fi
 COPY config/.secrets ./config/
 # Ensure you copy the binary with the correct name
