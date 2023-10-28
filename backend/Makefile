@@ -10,7 +10,7 @@ GCR_HOSTNAME=asia.gcr.io
 .PHONY: docker-compose push configure-docker deploy build-bot run-bot
 
 run-bot:
-	docker run -it --rm --name $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
+	docker run -it --rm --network host --name $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
 run-service:
 	docker run -it --rm --network host --name $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(IMAGE_TAG)
 run-db:
@@ -21,7 +21,12 @@ docker-compose:
 	docker-compose -f docker-compose.yaml up
 
 build-bot:
-	docker build -f dockerfile-bot -t $(BOT_IMAGE) .
+	@if [ "$(env)" = "local" ]; then \
+		echo "Build image for running locally"; \
+	else \
+		echo "Build image for running on GCP"; \
+	fi
+	docker build --build-arg ENV=$(env) -f dockerfile-bot -t $(BOT_IMAGE) .
 	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
 build-service:
 	@if [ "$(env)" = "local" ]; then \

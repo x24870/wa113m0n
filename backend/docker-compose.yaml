@@ -12,19 +12,17 @@ services:
     # ports:
     #   - "5432:5432"
   # Wallemon Bot
-  # bot:
-  #   image: wallemon-bot
-  #   container_name: bot
-  #   depends_on:
-  #     - db
-  #   environment:
-  #     - DATABASE_URL=postgres://user:user@db:5432/postgres
-  # Wallemon Service
-  service:
-    image: wallemon-service
-    container_name: service
+  bot:
+    image: wallemon-bot
+    container_name: bot
     depends_on:
       - db
-    ports:
-      - "8080:8080"
+  # Wallemon Service
+  # service:
+  #   image: wallemon-service
+  #   container_name: service
+  #   depends_on:
+  #     - db
+  #   ports:
+  #     - "8080:8080"
 

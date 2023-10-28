@@ -8,6 +8,7 @@ import (
 	"os/signal"
 
 	"os"
+	"wallemon/pkg/database"
 	"wallemon/pkg/utils"
 
 	"github.com/ethereum/go-ethereum"
@@ -17,20 +18,11 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/robfig/cron/v3"
-	"gopkg.in/yaml.v2"
 )
 
-type Config struct {
-	Database struct {
-		Host     string `yaml:"host"`
-		Port     int    `yaml:"port"`
-		Username string `yaml:"username"`
-		Password string `yaml:"password"`
-	} `yaml:"database"`
-	Ethereum struct {
-		RPCURL string `yaml:"rpcURL"`
-	} `yaml:"ethereum"`
-}
+var (
+	env string
+)
 
 type ToBeSickListRet = []*big.Int
 
@@ -44,14 +36,18 @@ var (
 )
 
 func init() {
-	var err error
+	err := utils.LoadEnvConfig("config/.env")
+	if err != nil {
+		panic(fmt.Errorf("failed to load config: %v", err))
+	}
+
 	err = utils.LoadEnvConfig("config/.secrets")
 	if err != nil {
 		panic(fmt.Errorf("failed to load secrets: %v", err))
 	}
 
-	// client, err = ethclient.Dial("http://127.0.0.1:8545")
-	client, err = ethclient.Dial("http://host.docker.internal:8545")
+	rpc := os.Getenv("RPC")
+	client, err = ethclient.Dial(rpc)
 	if err != nil {
 		panic(fmt.Errorf("failed to connect to the Ethereum client: %v", err))
 	}
@@ -62,7 +58,6 @@ func init() {
 	}
 
 	parsedABI, err = utils.GetContractABI("./config/abi.json")
-	// parsedABI, err = utils.GetContractABI("../../config/abi.json")
 	if err != nil {
 		panic(fmt.Errorf("failed to parse contract ABI: %v", err))
 	}
@@ -77,20 +72,27 @@ func init() {
 	}
 	ownerAddr = crypto.PubkeyToAddress(ownerKey.PublicKey)
 
-	wallemonAddr = common.HexToAddress("0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512")
+	wallemonAddr = common.HexToAddress(os.Getenv("WALLEMON_ADDRESS"))
+
+	env = os.Getenv("ENV")
+	if env != "local" {
+		env = "cloud"
+	}
+	fmt.Println("wallemon-bot ENV: ", env)
 }
 
 func main() {
-	// cfg, err := loadConfig("config/env.yaml")
-	// if err != nil {
-	// 	log.Fatal(err)
-	// }
+	// Create root context.
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	database.Initialize(ctx)
+	defer database.Finalize()
 
 	c := cron.New()
-	// c.AddFunc("@every 6h", func() {
-	// fmt.Println(cfg.Database.Host)
-	// 	sendEthTransaction()
-	// })
+	c.AddFunc("@every 3s", func() {
+		fmt.Println("Gogo")
+	})
 
 	c.AddFunc("@every 3s", func() {
 		sickBot()
@@ -264,19 +266,4 @@ func batachKill(list ToBeSickListRet) error {
 	fmt.Printf("Sent Transaction: %s\n", signedTx.Hash().Hex())
 
 	return nil
-}
-
-func loadConfig(filename string) (*Config, error) {
-	buf, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, err
-	}
-
-	var cfg Config
-	err = yaml.Unmarshal(buf, &cfg)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cfg, nil
 }
