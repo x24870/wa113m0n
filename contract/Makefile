@@ -10,6 +10,10 @@ test:
 	forge test -vvv
 
 # deploy
+deployPreheat:
+	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/Preheat.s.sol --broadcast --verify -vvvv
+safeMintPreheat:
+	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 script:
 	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv
 scriptGoerli:
@@ -68,6 +72,11 @@ safeMintGoerli:
 	cast send --rpc-url ${GOERLI} --private-key ${GOERLI_PRIVATE_KEY} ${PROXY} "safeMint(address,string)" ${GOERLI_ADDR} 0
 owner:
 	cast call ${CONTRACT} "owner()(address)"
+# preheat
+totalSupplyPreheat:
+	cast call --rpc-url=${LOCALHOST} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "totalSupply()(uint256)"
+burnPreheat:
+	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "burn(uint256)" 0
 
 # utils
 abi:
