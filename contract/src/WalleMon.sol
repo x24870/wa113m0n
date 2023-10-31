@@ -70,7 +70,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
-        feed(tokenId);
+        initTokenStatus(tokenId);
     }
 
     function userMint(string calldata refCode, bytes calldata sig) public {
@@ -80,7 +80,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         uint256 tokenId = _nextTokenId++;
         _safeMint(msg.sender, tokenId);
         _setTokenURI(tokenId, "");
-        feed(tokenId);
+        initTokenStatus(tokenId);
     }
 
     function _authorizeUpgrade(address newImplementation)
@@ -90,6 +90,11 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     {}
 
     // WalletMon logic functions
+    function initTokenStatus(uint256 tokenID) public onlyOwner() {
+        _states[tokenID].health = Health.HEALTHY;
+        _states[tokenID].lastMealTime = uint32(block.timestamp);
+    }
+
     function feed(uint256 tokenId) public isRevealed() onlyOwnerOrTokenOwner(tokenId) {
         require(
             _states[tokenId].health == Health.HEALTHY,

@@ -15,7 +15,7 @@ contract WalleMonTest is Test {
     Preheat public preheat;
     ERC6551Registry public registry;
     Referral public referral;
-    WalleMon public walletMon;
+    WalleMon public walleMon;
     address public refAddr;
     address public preheatAddr;
     address public registryAddr;
@@ -49,7 +49,7 @@ contract WalleMonTest is Test {
         assertEq(success, true);
 
         // setup
-        walletMon = WalleMon(proxy);
+        walleMon = WalleMon(proxy);
         referral = Referral(refAddr);
         registry = ERC6551Registry(registryAddr);
         preheat = Preheat(preheatAddr);
@@ -88,8 +88,8 @@ contract WalleMonTest is Test {
         // test owner
         console2.log("************* proxyAddress: ", proxy);
         console2.log("msg.sender: ", msg.sender);
-        console2.log("walleMon owner", walletMon.owner());
-        assertEq(msg.sender, walletMon.owner());
+        console2.log("walleMon owner", walleMon.owner());
+        assertEq(msg.sender, walleMon.owner());
 
         // test set ref code
         string memory refCode = "wallemon";
@@ -102,11 +102,11 @@ contract WalleMonTest is Test {
 
     function testWalleMonGame() public {
         vm.prank(owner);
-        walletMon.setRevealed(true);
+        walleMon.setRevealed(true);
         vm.prank(owner);
-        walletMon.safeMint(mintTo, "tokenURI");
-        assertEq(1, walletMon.balanceOf(mintTo));
-        assertEq(mintTo, walletMon.ownerOf(0));
+        walleMon.safeMint(mintTo, "tokenURI");
+        assertEq(1, walleMon.balanceOf(mintTo));
+        assertEq(mintTo, walleMon.ownerOf(0));
         
         uint256 bornMealTime = block.timestamp;
         assertEq(block.timestamp, bornMealTime);
@@ -115,25 +115,43 @@ contract WalleMonTest is Test {
 
         // feed
         vm.prank(mintTo);
-        walletMon.feed(0);
-        assertEq(block.timestamp, walletMon.lastMealTime(0));
-        assertEq(bornMealTime + 1 minutes, walletMon.lastMealTime(0));
+        walleMon.feed(0);
+        assertEq(block.timestamp, walleMon.lastMealTime(0));
+        assertEq(bornMealTime + 1 minutes, walleMon.lastMealTime(0));
      
         // sick
         vm.prank(owner);
-        walletMon.sick(0);
-        assertEq(uint8(WalleMon.Health.SICK), walletMon.health(0));
+        walleMon.sick(0);
+        assertEq(uint8(WalleMon.Health.SICK), walleMon.health(0));
 
         // heal
         vm.prank(mintTo);
-        walletMon.heal(0);
-        assertEq(uint8(WalleMon.Health.HEALTHY), walletMon.health(0));
+        walleMon.heal(0);
+        assertEq(uint8(WalleMon.Health.HEALTHY), walleMon.health(0));
 
         // kill
         vm.prank(owner);
-        walletMon.sick(0);
+        walleMon.sick(0);
         vm.prank(owner);
-        walletMon.kill(0);
-        assertEq(uint8(WalleMon.Health.DEAD), walletMon.health(0));
+        walleMon.kill(0);
+        assertEq(uint8(WalleMon.Health.DEAD), walleMon.health(0));
+    }
+
+    function testWalleMonOwnership() public {
+        vm.startPrank(owner);
+        console2.log("wallemon owner: ", walleMon.owner());
+        assertEq(owner, walleMon.owner());
+        address newOwner = address(0x1);
+        walleMon.transferOwnership(newOwner);
+        assertEq(newOwner, walleMon.owner());
+        vm.stopPrank();
+
+        vm.startPrank(newOwner);
+        walleMon.safeMint(address(0x2), "");
+        assertEq(1, walleMon.balanceOf(address(0x2)));
+        // return ownership
+        walleMon.transferOwnership(owner);
+        assertEq(owner, walleMon.owner());
+        vm.stopPrank();
     }
 }

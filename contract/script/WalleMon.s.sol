@@ -13,7 +13,7 @@ contract DeployWalleMon is Script {
         vm.startBroadcast();
         address proxy = deployWalleMon();
         // address referral = deployReferral();
-        address referral = address(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);
+        address referral = address(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512);// TODO: replace to referral address
         address registry = deployERC6551Registry();
         initWalletMon(proxy, registry, referral);
         vm.stopBroadcast();
