@@ -45,6 +45,14 @@ contract Referral {
         referralAmount[_referralCode] = _amount;
     }
 
+    function batchSetReferralAmounts(string[] calldata _referralCodes, uint32[] calldata _amounts) public {
+        require(msg.sender == owner, "Referral: not owner");
+        require(_referralCodes.length == _amounts.length, "Referral: length not match");
+        for (uint256 i = 0; i < _referralCodes.length; i++) {
+            referralAmount[_referralCodes[i]] = _amounts[i];
+        }
+    }
+
     // TODO: only wallemon can call
     function claim(address minter, string calldata _referralCode, bytes calldata signature) public {
         require(Strings.equal(claimed[minter], ""), "Referral: already claimed");

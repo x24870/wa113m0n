@@ -10,8 +10,26 @@ contract DeployWalleMon is Script {
 
     function run() external {
         vm.startBroadcast();
-        referral = Referral(address(0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0));
-        referral.setReferralAmounts("wallemon", 3);
+
+        // set single referral amount
+        referral = Referral(address(0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512));
+        // referral.setReferralAmounts("wallemon", 3);
+
+        // set multiple referral amounts
+        string[] memory referralCodes = new string[](5);
+        uint32[] memory amounts = new uint32[](5);
+        referralCodes[0] = "wallemon";
+        referralCodes[1] = "wallemon2";
+        referralCodes[2] = "wallemon3";
+        referralCodes[3] = "wallemon4";
+        referralCodes[4] = "wallemon5";
+        amounts[0] = 1;
+        amounts[1] = 2;
+        amounts[2] = 3;
+        amounts[3] = 4;
+        amounts[4] = 5;
+        referral.batchSetReferralAmounts(referralCodes, amounts);
+
         vm.stopBroadcast();
     }
 

@@ -21,9 +21,9 @@ scriptGoerli:
 setReferral:
 	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/SetReferral.s.sol --broadcast --verify -vvvv
 getReferral:
-	cast call  --rpc-url=${LOCALHOST} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "getReferralAmounts(string)(uint32)" wallemon
+	cast call  --rpc-url=${LOCALHOST} 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getReferralAmounts(string)(uint32)" wallemon3
 getReferralOwner:
-	cast call  --rpc-url=${LOCALHOST} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "getOwner()(address)"
+	cast call  --rpc-url=${LOCALHOST} 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getOwner()(address)"
 setReferralOwner:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "setOwner(address)()" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 reveal:
