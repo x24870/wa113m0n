@@ -77,6 +77,8 @@ totalSupplyPreheat:
 	cast call --rpc-url=${LOCALHOST} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "totalSupply()(uint256)"
 burnPreheat:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "burn(uint256)" 0
+burnPreheatAll:
+	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "burnAll()" 0
 
 # utils
 abi:

@@ -85,6 +85,13 @@ contract Preheat is ERC721, ERC721Enumerable, ERC721Burnable, Ownable {
         _burn(tokenId);
     }
 
+    function burnAll() public {
+        uint256 _totalSupploy = totalSupply();
+        for (uint256 i = 0; i < _totalSupploy; i++) {
+            burn(i);
+        }
+    }
+
     function transferFrom(address from, address to, uint256 tokenId) public override(IERC721, ERC721) {
         require(_isApprovedOrOwnerOrContractOwner(_msgSender(), tokenId), "ERC721: caller is not contract owner or  token owner nor approved");
 
