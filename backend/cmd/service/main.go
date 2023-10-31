@@ -28,11 +28,6 @@ func init() {
 		panic(fmt.Errorf("failed to load config: %v", err))
 	}
 
-	err = utils.LoadEnvConfig("config/.secrets")
-	if err != nil {
-		panic(fmt.Errorf("failed to load secrets: %v", err))
-	}
-
 	env = os.Getenv("ENV")
 	if env != "local" {
 		env = "cloud"

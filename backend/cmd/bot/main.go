@@ -41,11 +41,6 @@ func init() {
 		panic(fmt.Errorf("failed to load config: %v", err))
 	}
 
-	err = utils.LoadEnvConfig("config/.secrets")
-	if err != nil {
-		panic(fmt.Errorf("failed to load secrets: %v", err))
-	}
-
 	rpc := os.Getenv("RPC")
 	client, err = ethclient.Dial(rpc)
 	if err != nil {
