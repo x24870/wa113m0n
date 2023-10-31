@@ -8,6 +8,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URISto
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import {ERC6551Registry} from "./ERC6551Registry.sol";
 import {Referral} from "./Referral.sol";
 
 contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
@@ -26,9 +27,9 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     uint32 private _sickDuration; // the time interval from last get sick time, after which a WalleMon is dead
     uint32 private _invincibleDuration; // the time interval after a WalleMon is healed, during which it cannot be sick again
 
-    // roles
+    // contracts
+    ERC6551Registry private _registry;
     Referral private _referral;
-    address private _refOwner;
     // token state
     uint256 private _nextTokenId;
     mapping(uint256 => State) private _states;
@@ -38,7 +39,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _disableInitializers();
     }
 
-    function initialize(address initialOwner, address referral) initializer public {
+    function initialize(address initialOwner, address registry, address referral) initializer public {
         __ERC721_init("WalleMon", "WLM");
         __ERC721Enumerable_init();
         __ERC721URIStorage_init();
@@ -47,8 +48,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _hungryDuration = 5 seconds;
         _sickDuration = 3 seconds;
         _invincibleDuration = 3 seconds;
+        _registry = ERC6551Registry(registry);
         _referral = Referral(referral);
-        _refOwner = initialOwner;
         _revealed = false;
         _eggURI = "https://ipfs.blocto.app/ipfs/QmZpyCWdehFknvkH9YvdhGk6TNTv8bsA36GLyWvp4nP1QA/egg.json";
     }
@@ -89,7 +90,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     {}
 
     // WalletMon logic functions
-    function feed(uint256 tokenId) public onlyOwnerOrTokenOwner(tokenId) {
+    function feed(uint256 tokenId) public isRevealed() onlyOwnerOrTokenOwner(tokenId) {
         require(
             _states[tokenId].health == Health.HEALTHY,
             "WalleMon: dead or sick"
@@ -97,7 +98,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _states[tokenId].lastMealTime = uint32(block.timestamp);
     }
 
-    function sick(uint256 tokenId) public onlyOwner() {
+    function sick(uint256 tokenId) public isRevealed() onlyOwner() {
         require(
             _states[tokenId].health == Health.HEALTHY,
             "WalleMon: dead or sick"
@@ -105,7 +106,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _states[tokenId].health = Health.SICK;
     }
 
-    function heal(uint256 tokenId) public onlyOwnerOrTokenOwner(tokenId) {
+    function heal(uint256 tokenId) public isRevealed() onlyOwnerOrTokenOwner(tokenId) {
         require(
             _states[tokenId].health == Health.SICK,
             "WalleMon: not sick"
@@ -113,7 +114,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _states[tokenId].health = Health.HEALTHY;
     }
 
-    function kill(uint256 tokenId) public onlyOwner() {
+    function kill(uint256 tokenId) public isRevealed() onlyOwner() {
         require(
             _states[tokenId].health == Health.SICK,
             "WalleMon: not sick"
@@ -220,6 +221,14 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         require(
             msg.sender == ownerOf(tokenId) || msg.sender == owner(),
             "WalleMon: not token owner or owner"
+        );
+        _;
+    }
+
+    modifier isRevealed() {
+        require(
+            _revealed == true,
+            "WalleMon: not revealed"
         );
         _;
     }

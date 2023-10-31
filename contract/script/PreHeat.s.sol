@@ -18,11 +18,17 @@ contract DeployPreheat is Script {
 
     function deployReferral() public returns (address) {
         Referral referral = new Referral();
+        console2.log("deployReferral...");
+        console2.log("refertal: ", address(referral));
+        console2.log("this: ", address(this));
+        console2.log("msg.sender: ", msg.sender);
+        console2.log("owner: ", referral.getOwner());
         return address(referral);
     }
 
     function deployPreheat() public returns (address) {
         Preheat preheat = new Preheat();
+        console2.log("deployPreheat...");
         console2.log("preheat: ", address(preheat));
         console2.log("this: ", address(this));
         console2.log("msg.sender: ", msg.sender);
