@@ -90,6 +90,9 @@ contract Preheat is ERC721, ERC721Enumerable, ERC721Burnable, Ownable {
     function burnAll() public {
         uint256 _totalSupploy = totalSupply();
         for (uint256 i = 0; i < _totalSupploy; i++) {
+            if (ownerOf(i) == address(0)) {
+                continue;
+            }
             burn(i);
         }
     }
