@@ -11,7 +11,12 @@ test:
 
 # deploy
 deployPreheat:
-	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/Preheat.s.sol --broadcast --verify -vvvv
+	if [ "$(network)" = "goerli" ]; then \
+		forge script --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} script/Preheat.s.sol --broadcast --verify -vvvv; \
+	else \
+		forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/Preheat.s.sol --broadcast --verify -vvvv; \
+	fi
+	
 safeMintPreheat:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 script:
@@ -19,11 +24,16 @@ script:
 scriptGoerli:
 	forge script --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv
 setReferral:
-	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/SetReferral.s.sol --broadcast --verify -vvvv
+	if [ "$(network)" = "goerli" ]; then \
+		forge script --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} script/SetReferral.s.sol --broadcast --verify -vvvv; \
+	else \
+		forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/SetReferral.s.sol --broadcast --verify -vvvv; \
+	fi
+
 getReferral:
-	cast call  --rpc-url=${LOCALHOST} 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getReferralAmounts(string)(uint32)" wallemon3
+	cast call  --rpc-url=${LOCALHOST} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "getReferralAmounts(string)(uint32)" wallemon
 getReferralOwner:
-	cast call  --rpc-url=${LOCALHOST} 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "getOwner()(address)"
+	cast call  --rpc-url=${LOCALHOST} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "getOwner()(address)"
 setReferralOwner:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "setOwner(address)()" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 reveal:
@@ -83,20 +93,17 @@ burnPreheatAll:
 # utils
 abi:
 	forge inspect src/WalleMon.sol:WalleMon abi > ../backend/config/abi.json
+abiPreheat:
+	forge inspect src/Preheat.sol:Preheat abi > ../backend/config/abiPreheat.json
 
 abigen:
 	abigen --abi=w.json --pkg=abi --out=../backend/abi/WalleMon.go
 
 
 
-#   [2568795] → new WalleMon@0x5FbDB2315678afecb367f032d93F642f64180aa3
-#     ├─ emit Initialized(version: 18446744073709551615 [1.844e19])
-#     └─ ← 11531 bytes of code
+#   [1050581] → new Referral@0x5FbDB2315678afecb367f032d93F642f64180aa3
+#     └─ ← 4518 bytes of code
 
-#   [135226] → new ERC1967Proxy@0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
-#     ├─ emit Upgraded(implementation: WalleMon: [0x5FbDB2315678afecb367f032d93F642f64180aa3])
-#     └─ ← 177 bytes of code
-
-#   [957022] → new Referral@0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0
-#     └─ ← 4084 bytes of code
-
+#   [1692549] → new Preheat@0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+#     ├─ emit OwnershipTransferred(previousOwner: 0x0000000000000000000000000000000000000000, newOwner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266)
+#     └─ ← 7117 bytes of code

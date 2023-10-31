@@ -10,8 +10,8 @@ import {ERC1967Proxy} from "@openzeppelin/contracts/proxy/ERC1967/ERC1967Proxy.s
 contract DeployPreheat is Script {
     function run() external returns (address, address) {
         vm.startBroadcast();
-        address preheat = deployPreheat();
         address referral = deployReferral();
+        address preheat = deployPreheat(referral);
         vm.stopBroadcast();
         return (preheat, referral);
     }
@@ -26,8 +26,8 @@ contract DeployPreheat is Script {
         return address(referral);
     }
 
-    function deployPreheat() public returns (address) {
-        Preheat preheat = new Preheat();
+    function deployPreheat(address referral) public returns (address) {
+        Preheat preheat = new Preheat(referral);
         console2.log("deployPreheat...");
         console2.log("preheat: ", address(preheat));
         console2.log("this: ", address(this));

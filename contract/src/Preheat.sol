@@ -16,10 +16,12 @@ contract Preheat is ERC721, ERC721Enumerable, ERC721Burnable, Ownable {
     //     Ownable(initialOwner)
     // {}
 
-    constructor()
+    constructor(address referral)
         ERC721("WalleMon", "WLM")
         Ownable()
-    {}
+    {
+        _referral = Referral(referral);
+    }
 
     function _baseURI() internal pure override returns (string memory) {
         return "https://ipfs.blocto.app/ipfs/QmZpyCWdehFknvkH9YvdhGk6TNTv8bsA36GLyWvp4nP1QA/egg.json";
@@ -90,6 +92,16 @@ contract Preheat is ERC721, ERC721Enumerable, ERC721Burnable, Ownable {
         for (uint256 i = 0; i < _totalSupploy; i++) {
             burn(i);
         }
+    }
+
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        override(ERC721)
+        returns (string memory)
+    {
+        _requireMinted(tokenId);
+        return _baseURI();
     }
 
     function transferFrom(address from, address to, uint256 tokenId) public override(IERC721, ERC721) {
