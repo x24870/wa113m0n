@@ -13,9 +13,14 @@ test:
 deployPreheat:
 	if [ "$(network)" = "goerli" ]; then \
 		forge script --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} script/Preheat.s.sol --broadcast --verify -vvvv; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		forge script --rpc-url=${ARB} --private-key=${ARB_PRIVATE_KEY} script/Preheat.s.sol --broadcast --verify -vvvv; \
 	else \
 		forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/Preheat.s.sol --broadcast --verify -vvvv; \
 	fi
+
+estimateGasPrice:
+	cast gas-price --rpc-url=${ARB}
 	
 safeMintPreheat:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
@@ -26,6 +31,8 @@ scriptGoerli:
 setReferral:
 	if [ "$(network)" = "goerli" ]; then \
 		forge script --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} script/SetReferral.s.sol --broadcast --verify -vvvv; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		forge script --rpc-url=${ARB} --private-key=${ARB_PRIVATE_KEY} script/SetReferral.s.sol --broadcast --verify -vvvv; \
 	else \
 		forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/SetReferral.s.sol --broadcast --verify -vvvv; \
 	fi
@@ -75,7 +82,7 @@ ownerOf:
 balanceOf:
 	cast call ${CONTRACT} "balanceOf(address)(uint256)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 total_supply:
-	cast call ${CONTRACT} "totalSupply()(uint256)"
+	cast call  "totalSupply()(uint256)"
 safeMint:
 	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address,string)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 fucnk
 safeMintGoerli:
@@ -84,11 +91,11 @@ owner:
 	cast call ${CONTRACT} "owner()(address)"
 # preheat
 totalSupplyPreheat:
-	cast call --rpc-url=${LOCALHOST} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "totalSupply()(uint256)"
+	cast call --rpc-url=${LOCALHOST} 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "totalSupply()(uint256)"
 burnPreheat:
-	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "burn(uint256)" 0
+	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "burn(uint256)" 0
 burnPreheatAll:
-	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "burnAll()" 0
+	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "burnAll()"
 
 # utils
 abi:
@@ -104,6 +111,6 @@ abigen:
 #   [1050581] → new Referral@0x5FbDB2315678afecb367f032d93F642f64180aa3
 #     └─ ← 4518 bytes of code
 
-#   [1692549] → new Preheat@0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
+#   [1697908] → new Preheat@0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
 #     ├─ emit OwnershipTransferred(previousOwner: 0x0000000000000000000000000000000000000000, newOwner: 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266)
-#     └─ ← 7117 bytes of code
+#     └─ ← 7142 bytes of code
