@@ -20,7 +20,7 @@ type poop struct {
 	Base
 
 	ID      uuid.UUID `gorm:"column:id;primary_key;type:uuid;default:uuid_generate_v4()"`
-	TokenID uuid.UUID `gorm:"column:token_id;type:uuid;not null"`
+	TokenID uint      `gorm:"column:token_id;type:integer;not null"`
 	Amount  uint      `gorm:"column:amount;type:integer;not null"`
 }
 
