@@ -18,12 +18,29 @@ deployPreheat:
 	else \
 		forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/Preheat.s.sol --broadcast --verify -vvvv; \
 	fi
+deployWallemon:
+	if [ "$(network)" = "goerli" ]; then \
+		forge script --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		forge script --rpc-url=${ARB} --private-key=${ARB_PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv; \
+	else \
+		forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv; \
+	fi
 
 estimateGasPrice:
 	cast gas-price --rpc-url=${ARB}
 	
 safeMintPreheat:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+safeMintWallemon:
+	if [ "$(network)" = "goerli" ]; then \
+		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0x9fc184Dc6A94B43e56478e817e31C15315Ac0757 "safeMint(address,string)" 0x26A6b256284904c7e57eAc43dee5185D47cD2c3a ""; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0xB3545c6bb37E4854d57ABE36db9943dbf795068d "safeMint(address)" 0x0; \
+	else \
+		cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "safeMint(address,string)" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 ""; \
+	fi
+
 script:
 	forge script --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} script/WalleMon.s.sol --broadcast --verify -vvvv
 scriptGoerli:
@@ -44,9 +61,27 @@ getReferralOwner:
 setReferralOwner:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "setOwner(address)()" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 reveal:
-	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} ${CONTRACT} "setRevealed(bool)()" true
+	if [ "$(network)" = "goerli" ]; then \
+		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0x9fc184Dc6A94B43e56478e817e31C15315Ac0757 "setRevealed(bool)()" true; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		@echo not yet; \
+	else \
+		cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "setRevealed(bool)()" true; \
+	fi
+revealed:
+	cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "revealed()(bool)"
+
+health:
+	if [ "$(network)" = "goerli" ]; then \
+		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "health(uint256)(uint8)" 0; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		@echo not yet; \
+	else \
+		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "health(uint256)(uint8)" 0; \
+	fi
+
 toBeSickList:
-	cast call --rpc-url=${LOCALHOST} ${CONTRACT} "toBeSickList()(uint256[])"
+	cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "toBeSickList()(uint256[])"
 
 # upgrade
 upgrade:
@@ -68,6 +103,8 @@ getHealth:
 	cast call ${CONTRACT} "health(uint256)(uint256)" 0
 getLastMealTime:
 	cast call ${CONTRACT} "lastMealTime(uint256)(uint256)" 0
+healthList:
+	cast call 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "healthList()(uint8[])"
 
 # uri calls
 tokenUri:
@@ -81,10 +118,10 @@ ownerOf:
 	cast call ${CONTRACT} "ownerOf(uint256)(address)" 0
 balanceOf:
 	cast call ${CONTRACT} "balanceOf(address)(uint256)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
-total_supply:
-	cast call  "totalSupply()(uint256)"
+totalSupply:
+	cast call --rpc-url ${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "totalSupply()(uint256)"
 safeMint:
-	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address,string)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 fucnk
+	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address,string)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 ""
 safeMintGoerli:
 	cast send --rpc-url ${GOERLI} --private-key ${GOERLI_PRIVATE_KEY} ${PROXY} "safeMint(address,string)" ${GOERLI_ADDR} 0
 owner:
@@ -102,6 +139,8 @@ abi:
 	forge inspect src/WalleMon.sol:WalleMon abi > ../backend/config/abi.json
 abiPreheat:
 	forge inspect src/Preheat.sol:Preheat abi > ../backend/config/abiPreheat.json
+abiReferral:
+	forge inspect src/Referral.sol:Referral abi > ../backend/config/abiReferral.json
 
 abigen:
 	abigen --abi=w.json --pkg=abi --out=../backend/abi/WalleMon.go

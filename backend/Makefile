@@ -4,15 +4,16 @@
 GCP_PROJECT_ID=growth-squad-396607
 BOT_IMAGE=wallemon-bot
 SERVICE_IMAGE=wallemon-service
-IMAGE_TAG=latest
+LATEST_TAG=latest
+TESTNET_TAG=testnet
 GCR_HOSTNAME=asia.gcr.io
 
 .PHONY: docker-compose push configure-docker deploy build-bot run-bot
 
 run-bot:
-	docker run -it --rm --network host --name $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
+	docker run -it --rm --network host --name $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(LATEST_TAG)
 run-service:
-	docker run -it --rm --network host --name $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(IMAGE_TAG)
+	docker run -it --rm --network host --name $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(LATEST_TAG)
 run-db:
 	docker run -it --rm --name postgres -e POSTGRES_PASSWORD=user -e POSTGRES_USER=user -p 5432:5432 postgres:14.9-alpine
 
@@ -26,28 +27,34 @@ build-bot:
 	else \
 		echo "Build image for running on GCP"; \
 	fi
+	$(eval TAG=$(if $(filter $(testnet),true),$(TESTNET_TAG),$(LATEST_TAG)))
 	docker build --build-arg ENV=$(env) -f dockerfile-bot -t $(BOT_IMAGE) .
-	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
+	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(TAG)
+
 build-service:
 	@if [ "$(env)" = "local" ]; then \
 		echo "Build image for running locally"; \
 	else \
 		echo "Build image for running on GCP"; \
 	fi
+	$(eval TAG=$(if $(filter $(testnet),true),$(TESTNET_TAG),$(LATEST_TAG)))
+	@echo "TAG is: $(TAG)"
 	docker build --build-arg ENV=$(env) -f dockerfile-service -t $(SERVICE_IMAGE) .
-	docker tag $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(IMAGE_TAG)
+	docker tag $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(TAG)
 
 
 # Push the Docker image to Google Container Registry
 push-service: configure-docker build-service
 	@echo "Pushing Docker image to GCR..."
-	docker tag $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(IMAGE_TAG)
-	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(IMAGE_TAG)
+	$(eval TAG=$(if $(filter $(testnet),true),$(TESTNET_TAG),$(LATEST_TAG)))
+	@echo "TAG is: $(TAG)"
+	docker tag $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(TAG)
+	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(TAG)
 
 push-bot: configure-docker build-bot
 	@echo "Pushing Docker image to GCR..."
-	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
-	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)
+	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(LATEST_TAG)
+	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(LATEST_TAG)
 
 # Authenticate Docker to GCR
 configure-docker:
@@ -59,7 +66,7 @@ deploy: push
 	@echo "Deploying Docker image to GCP VM..."
 	ssh $(VM_USER)@$(VM_IP) "\
 		gcloud auth configure-docker $(GCR_HOSTNAME) && \
-		docker pull $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG) && \
+		docker pull $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(LATEST_TAG) && \
 		docker stop $(BOT_IMAGE) || true && \
 		docker rm $(BOT_IMAGE) || true && \
-		docker run -d --name $(BOT_IMAGE) -p 8080:8080 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(IMAGE_TAG)"
+		docker run -d --name $(BOT_IMAGE) -p 8080:8080 $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(LATEST_TAG)"

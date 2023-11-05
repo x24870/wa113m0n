@@ -12,11 +12,11 @@ services:
     # ports:
     #   - "5432:5432"
   # Wallemon Bot
-  # bot:
-  #   image: wallemon-bot
-  #   container_name: bot
-  #   depends_on:
-  #     - db
+  bot:
+    image: wallemon-bot:latest
+    container_name: bot
+    depends_on:
+      - db
   # Wallemon Service
   service:
     image: wallemon-service

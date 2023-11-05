@@ -514,6 +514,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "healthList",
+    "outputs": [
+      {
+        "internalType": "uint8[]",
+        "name": "",
+        "type": "uint8[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256",
@@ -690,6 +703,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "revealed",
+    "outputs": [
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -793,7 +819,7 @@
     "inputs": [
       {
         "internalType": "bool",
-        "name": "revealed",
+        "name": "_revealed",
         "type": "bool"
       }
     ],

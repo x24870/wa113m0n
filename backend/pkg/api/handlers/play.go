@@ -125,6 +125,18 @@ func Play(c *gin.Context) {
 	}
 
 	db := database.GetSQL()
+	// check if token is healthy
+	t := models.NewToken(req.TokenID)
+	t, err = t.GetByTokenID(db)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
+		return
+	}
+	if t.GetState() != 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Your partner is not healthy."})
+		return
+	}
+
 	// check if play limit reached
 	reached, err := models.OpLog.PlayLimitReached(db, req.TokenID)
 	if err != nil {
@@ -201,31 +213,6 @@ func GetPoop(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-
-	// clean poops
-	err = database.Transaction(db, func(tx *gorm.DB) error {
-		p, err = p.GetByTokenIDAndLock(db)
-		if err != nil {
-			return err
-		}
-		if err := p.Update(db, map[string]interface{}{
-			"amount": 0,
-		}); err != nil {
-			return err
-		}
-
-		l := models.NewOpLog(req.TokenID, string(models.OperationTypeClean))
-		if _, err := l.Create(db); err != nil {
-			return err
-		}
-
-		return nil
-	})
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
-		return
-	}
-
 	c.JSON(http.StatusOK, GetGemResp{
 		Amount: p.GetAmount(),
 	})
@@ -290,17 +277,28 @@ func Clean(c *gin.Context) {
 		return
 	}
 
-	// increase poop
+	// clean poops
 	db := database.GetSQL()
+	p := models.NewPoop(req.TokenID)
+	p, err = p.GetByTokenID(db)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
 	err = database.Transaction(db, func(tx *gorm.DB) error {
-		p := models.NewPoop(req.TokenID)
-		p, err := p.GetByTokenIDAndLock(db)
+		p, err = p.GetByTokenIDAndLock(db)
 		if err != nil {
 			return err
 		}
 		if err := p.Update(db, map[string]interface{}{
 			"amount": 0,
 		}); err != nil {
+			return err
+		}
+
+		l := models.NewOpLog(req.TokenID, string(models.OperationTypeClean))
+		if _, err := l.Create(db); err != nil {
 			return err
 		}
 

@@ -21,7 +21,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     }
 
     // misc params
-    bool private _revealed;
+    bool public revealed;
     string private _eggURI;
     uint32 private _hungryDuration; // the time interval from last feed time, after which a WalleMon is sick
     uint32 private _sickDuration; // the time interval from last get sick time, after which a WalleMon is dead
@@ -45,12 +45,12 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         __ERC721URIStorage_init();
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
-        _hungryDuration = 5 seconds;
-        _sickDuration = 3 seconds;
-        _invincibleDuration = 3 seconds;
+        _hungryDuration = 120 seconds;
+        _sickDuration = 120 seconds;
+        _invincibleDuration = 60 seconds;
         _registry = ERC6551Registry(registry);
         _referral = Referral(referral);
-        _revealed = false;
+        revealed = false;
         _eggURI = "https://ipfs.blocto.app/ipfs/QmZpyCWdehFknvkH9YvdhGk6TNTv8bsA36GLyWvp4nP1QA/egg.json";
     }
 
@@ -62,8 +62,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _eggURI = eggURI;
     }
 
-    function setRevealed(bool revealed) public onlyOwner {
-        _revealed = revealed;
+    function setRevealed(bool _revealed) public onlyOwner {
+        revealed = _revealed;
     }
 
     function safeMint(address to, string memory uri) public onlyOwner {
@@ -129,12 +129,18 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
     function batchSick(uint256[] calldata tokenIds) public onlyOwner() {
         for (uint256 i = 0; i < tokenIds.length; i++) {
+            if (_states[i].health != Health.HEALTHY) {
+                continue;
+            }
             sick(tokenIds[i]);
         }
     }
 
     function batachKill(uint256[] calldata tokenIds) public onlyOwner() {
         for (uint256 i = 0; i < tokenIds.length; i++) {
+            if (_states[i].health != Health.SICK) {
+                continue;
+            }
             kill(tokenIds[i]);
         }
     }
@@ -153,6 +159,15 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     }
 
     // TODO: maybe set to onlyOwner
+    function healthList() public view returns (uint8[] memory) {
+        uint8[] memory result = new uint8[](_nextTokenId);
+        for (uint256 i = 0; i < _nextTokenId; i++) {
+            result[i] = uint8(_states[i].health);
+        }
+        return result;
+    }
+
+
     function toBeSickList() public view returns (uint256[] memory) {
         uint256 counter = 0;
 
@@ -232,7 +247,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
     modifier isRevealed() {
         require(
-            _revealed == true,
+            revealed == true,
             "WalleMon: not revealed"
         );
         _;
@@ -260,10 +275,11 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         override(ERC721Upgradeable, ERC721URIStorageUpgradeable)
         returns (string memory)
     {
-        if (!_revealed) {
+        if (!revealed) {
             return _eggURI;
         }
-        return super.tokenURI(tokenId);
+        return _baseURI();
+        // return super.tokenURI(tokenId);
     }
 
     function supportsInterface(bytes4 interfaceId)
