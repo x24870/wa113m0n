@@ -9,6 +9,7 @@ import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import {ERC6551Registry} from "./ERC6551Registry.sol";
+import {ERC6551AccountProxy} from "./ERC6551Upgradeable/ERC6551AccountProxy.sol";
 import {Referral} from "./Referral.sol";
 
 contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
@@ -29,6 +30,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
     // contracts
     ERC6551Registry private _registry;
+    ERC6551AccountProxy private _tbaProxy;
     Referral private _referral;
     // token state
     uint256 private _nextTokenId;
@@ -39,7 +41,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _disableInitializers();
     }
 
-    function initialize(address initialOwner, address registry, address referral) initializer public {
+    function initialize(address initialOwner, address registry, address payable tbaProxy, address referral) initializer public {
         __ERC721_init("WalleMon", "WLM");
         __ERC721Enumerable_init();
         __ERC721URIStorage_init();
@@ -49,6 +51,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _sickDuration = 120 seconds;
         _invincibleDuration = 60 seconds;
         _registry = ERC6551Registry(registry);
+        _tbaProxy = ERC6551AccountProxy(tbaProxy);
         _referral = Referral(referral);
         revealed = false;
         _eggURI = "https://ipfs.blocto.app/ipfs/QmZpyCWdehFknvkH9YvdhGk6TNTv8bsA36GLyWvp4nP1QA/egg.json";
@@ -71,6 +74,15 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _safeMint(to, tokenId);
         _setTokenURI(tokenId, uri);
         initTokenStatus(tokenId);
+        // create TBA
+        bytes32 salt = bytes32(0);
+        _registry.createAccount(
+            address(_tbaProxy),
+            salt,
+            block.chainid,
+            address(this),
+            tokenId
+        );
     }
 
     function userMint(string calldata refCode, bytes calldata sig) public {
