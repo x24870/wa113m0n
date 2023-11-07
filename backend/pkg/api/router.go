@@ -14,7 +14,7 @@ func SetupRoutes(r *gin.Engine) {
 	config := cors.DefaultConfig()
 	config.AllowAllOrigins = true // adjust this to your needs
 	config.AllowMethods = []string{"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"}
-	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	config.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization", "address", "token_id"}
 	r.Use(cors.New(config))
 
 	// health check
