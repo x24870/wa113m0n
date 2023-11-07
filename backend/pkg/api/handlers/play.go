@@ -150,7 +150,12 @@ func Play(c *gin.Context) {
 	// increase gem
 	err = database.Transaction(db, func(tx *gorm.DB) error {
 		g := models.NewGem(req.TokenID)
-		g, err := g.GetByTokenIDAndLock(db)
+		g, err := g.CreateIfNotExists(db)
+		if err != nil {
+			return err
+		}
+
+		g, err = g.GetByTokenIDAndLock(db)
 		if err != nil {
 			return err
 		}

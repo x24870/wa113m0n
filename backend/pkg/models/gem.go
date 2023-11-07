@@ -44,9 +44,10 @@ func (t *gem) Indexes() []CustomIndex {
 	}
 }
 
-func NewGem(amount uint) GemInft {
+func NewGem(tokenID uint) GemInft {
 	g := gem{
-		Amount: amount,
+		TokenID: tokenID,
+		Amount:  0,
 	}
 	return &g
 }
