@@ -24,10 +24,10 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
     // misc params
     bool public revealed;
-    string private _eggURI;
-    uint32 private _hungryDuration; // the time interval from last feed time, after which a WalleMon is sick
-    uint32 private _sickDuration; // the time interval from last get sick time, after which a WalleMon is dead
-    uint32 private _invincibleDuration; // the time interval after a WalleMon is healed, during which it cannot be sick again
+    string public _eggURI;
+    uint32 public _hungryDuration; // the time interval from last feed time, after which a WalleMon is sick
+    uint32 public _sickDuration; // the time interval from last get sick time, after which a WalleMon is dead
+    uint32 public _invincibleDuration; // the time interval after a WalleMon is healed, during which it cannot be sick again
 
     // contracts
     ERC6551Registry private _registry;
@@ -48,9 +48,9 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         __ERC721URIStorage_init();
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
-        _hungryDuration = 120 seconds;
-        _sickDuration = 120 seconds;
-        _invincibleDuration = 60 seconds;
+        _hungryDuration = 15 minutes;
+        _sickDuration = 15 minutes;
+        _invincibleDuration = 10 minutes;
         _registry = ERC6551Registry(registry);
         _tbaProxy = ERC6551AccountProxy(tbaProxy);
         _referral = Referral(referral);
@@ -66,6 +66,18 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
     function setEggURI(string calldata eggURI) public onlyOwner {
         _eggURI = eggURI;
+    }
+
+    function setHungryDuration(uint32 duration) public onlyOwner {
+        _hungryDuration = duration;
+    }
+
+    function setSickDuration(uint32 duration) public onlyOwner {
+        _sickDuration = duration;
+    }
+
+    function setInvincibleDuration(uint32 duration) public onlyOwner {
+        _invincibleDuration = duration;
     }
 
     function setRevealed(bool _revealed) public onlyOwner {
@@ -108,6 +120,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     function initTokenStatus(uint256 tokenID) public onlyOwner() {
         _states[tokenID].health = Health.HEALTHY;
         _states[tokenID].lastMealTime = uint32(block.timestamp);
+        _states[tokenID].lastSickTime = uint32(block.timestamp);
+        _states[tokenID].lastHealTime = uint32(block.timestamp);
     }
 
     function feed(uint256 tokenId) public isRevealed() onlyOwnerOrTokenOwner(tokenId) {

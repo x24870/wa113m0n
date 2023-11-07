@@ -16,7 +16,7 @@ type PoopInft interface {
 	List(db *gorm.DB) ([]PoopInft, error)
 }
 
-const PoopDuration = 600 // seconds
+const PoopDuration = 300 // seconds
 const PoopMaxAmount = 6
 
 // Poop is the exported static model interface.
