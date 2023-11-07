@@ -5,6 +5,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts-upgradeable/token/ERC721/ERC721Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721URIStorageUpgradeable.sol";
+import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
@@ -12,7 +13,7 @@ import {ERC6551Registry} from "./ERC6551Registry.sol";
 import {ERC6551AccountProxy} from "./ERC6551Upgradeable/ERC6551AccountProxy.sol";
 import {Referral} from "./Referral.sol";
 
-contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, OwnableUpgradeable, UUPSUpgradeable, ERC2981 {
     enum Health { HEALTHY, SICK, DEAD }
     struct State {
         Health health;
@@ -55,6 +56,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _referral = Referral(referral);
         revealed = false;
         _eggURI = "https://ipfs.blocto.app/ipfs/QmZpyCWdehFknvkH9YvdhGk6TNTv8bsA36GLyWvp4nP1QA/egg.json";
+        // ERC2981 default royalty fee 5%
+        _setDefaultRoyalty(payable(initialOwner), 500);
     }
 
     function _baseURI() internal pure override returns (string memory) {
@@ -297,7 +300,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     function supportsInterface(bytes4 interfaceId)
         public
         view
-        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable)
+        override(ERC721Upgradeable, ERC721EnumerableUpgradeable, ERC721URIStorageUpgradeable, ERC2981)
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
@@ -306,4 +309,23 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     function blocktime() public view returns (uint256) {
         return block.timestamp;
     }
+
+    // ERC2981
+    function royaltyInfo(uint256 tokenId, uint256 salePrice)
+        public
+        view
+        override(ERC2981)
+        returns (address receiver, uint256 royaltyAmount)
+    {
+        return super.royaltyInfo(tokenId, salePrice);
+    }
+
+    function setRoyaltyInfo(address receiver, uint96 feeNumerator) public onlyOwner() {
+        _setDefaultRoyalty(receiver, feeNumerator);
+    }
+
+    function deleteRoyaltyInfo() public onlyOwner() {
+        _deleteDefaultRoyalty();
+    }
+    
 }
