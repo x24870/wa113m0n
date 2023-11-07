@@ -100,8 +100,8 @@ func main() {
 		killBot()
 	})
 
-	// c.AddFunc(fmt.Sprintf("@every %ds", models.PoopDuration), func() {
-	c.AddFunc("@every 5s", func() {
+	c.AddFunc(fmt.Sprintf("@every %ds", models.PoopDuration), func() {
+		// c.AddFunc("@every 5s", func() {
 		poopBot()
 	})
 
