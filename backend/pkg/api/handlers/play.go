@@ -6,9 +6,7 @@ import (
 
 	"wallemon/pkg/database"
 	"wallemon/pkg/models"
-	"wallemon/pkg/utils"
 
-	"github.com/ethereum/go-ethereum/common"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -103,31 +101,32 @@ func Play(c *gin.Context) {
 		return
 	}
 
-	sig, err := utils.SignatureToBytes(req.Signature)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// sig, err := utils.SignatureToBytes(req.Signature)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
 
-	// address string to common.Address
-	addr := common.HexToAddress(req.Address)
+	// // address string to common.Address
+	// addr := common.HexToAddress(req.Address)
 
-	// verify signature
-	valid, err := utils.VerifySignature(addr, playMessage, sig)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Signature verification failed."})
-		return
-	}
+	// // verify signature
+	// valid, err := utils.VerifySignature(addr, playMessage, sig)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Signature verification failed."})
+	// 	return
+	// }
 
-	if !valid {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "not signed by the given address"})
-		return
-	}
+	// if !valid {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "not signed by the given address"})
+	// 	return
+	// }
 
 	db := database.GetSQL()
 	// check if token is healthy
 	t := models.NewToken(req.TokenID)
-	t, err = t.GetByTokenID(db)
+	// t, err := t.GetByTokenID(db)
+	t, err := t.CreateIfNotExists(db)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
 		return
@@ -256,31 +255,32 @@ func Clean(c *gin.Context) {
 		return
 	}
 
-	sig, err := utils.SignatureToBytes(req.Signature)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	// sig, err := utils.SignatureToBytes(req.Signature)
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	// 	return
+	// }
 
-	// address string to common.Address
-	addr := common.HexToAddress(req.Address)
+	// // address string to common.Address
+	// addr := common.HexToAddress(req.Address)
 
-	// verify signature
-	valid, err := utils.VerifySignature(addr, cleanMessage, sig)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Signature verification failed."})
-		return
-	}
+	// // verify signature
+	// valid, err := utils.VerifySignature(addr, cleanMessage, sig)
+	// if err != nil {
+	// 	c.JSON(http.StatusInternalServerError, gin.H{"error": "Signature verification failed."})
+	// 	return
+	// }
 
-	if !valid {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "not signed by the given address"})
-		return
-	}
+	// if !valid {
+	// 	c.JSON(http.StatusBadRequest, gin.H{"error": "not signed by the given address"})
+	// 	return
+	// }
 
 	// clean poops
 	db := database.GetSQL()
 	p := models.NewPoop(req.TokenID)
-	p, err = p.GetByTokenID(db)
+	// p, err := p.GetByTokenID(db)
+	p, err := p.CreateIfNotExists(db)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

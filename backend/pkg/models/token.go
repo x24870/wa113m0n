@@ -77,6 +77,9 @@ func (t *token) Create(db *gorm.DB) (TokenInft, error) {
 }
 
 func (t *token) CreateIfNotExists(db *gorm.DB) (TokenInft, error) {
+	if t.TokenID >= 1000 {
+		return nil, ErrInvalidTokenID
+	}
 	if err := db.Where("token_id = ?", t.TokenID).FirstOrCreate(t).Error; err != nil {
 		return nil, err
 	}
