@@ -8,7 +8,7 @@ LATEST_TAG=latest
 TESTNET_TAG=testnet
 GCR_HOSTNAME=asia.gcr.io
 
-.PHONY: docker-compose push configure-docker deploy build-bot run-bot
+.PHONY: docker-compose push-bot push-service configure-docker deploy build-bot run-bot
 
 run-bot:
 	docker run -it --rm --network host --name $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(LATEST_TAG)
@@ -45,16 +45,18 @@ build-service:
 
 # Push the Docker image to Google Container Registry
 push-service: configure-docker build-service
-	@echo "Pushing Docker image to GCR..."
+	@echo "Pushing Service Docker image to GCR..."
 	$(eval TAG=$(if $(filter $(testnet),true),$(TESTNET_TAG),$(LATEST_TAG)))
 	@echo "TAG is: $(TAG)"
 	docker tag $(SERVICE_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(TAG)
 	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(SERVICE_IMAGE):$(TAG)
 
 push-bot: configure-docker build-bot
-	@echo "Pushing Docker image to GCR..."
-	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(LATEST_TAG)
-	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(LATEST_TAG)
+	@echo "Pushing Bot Docker image to GCR..."
+	$(eval TAG=$(if $(filter $(testnet),true),$(TESTNET_TAG),$(LATEST_TAG)))
+	@echo "TAG is: $(TAG)"
+	docker tag $(BOT_IMAGE) $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(TAG)
+	docker push $(GCR_HOSTNAME)/$(GCP_PROJECT_ID)/$(BOT_IMAGE):$(TAG)
 
 # Authenticate Docker to GCR
 configure-docker:
