@@ -157,6 +157,16 @@ func poopBot() {
 	fmt.Println("poopBot: poops: ", poops)
 
 	for _, p := range poops {
+		// check if tokenID is already dead
+		t, err := models.Token.GetByTokenID(db)
+		if err != nil {
+			fmt.Println(fmt.Errorf("poopBot: failed to get tokenID[%d] from DB: %v", p.GetTokenID(), err))
+			continue
+		}
+		if t.GetState() == 2 {
+			continue
+		}
+
 		a := p.GetAmount()
 		if a >= models.PoopMaxAmount {
 			continue
