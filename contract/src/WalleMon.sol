@@ -108,6 +108,15 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _safeMint(msg.sender, tokenId);
         _setTokenURI(tokenId, "");
         initTokenStatus(tokenId);
+        // create TBA
+        bytes32 salt = bytes32(0);
+        _registry.createAccount(
+            address(_tbaProxy),
+            salt,
+            block.chainid,
+            address(this),
+            tokenId
+        );
     }
 
     function _authorizeUpgrade(address newImplementation)
@@ -117,7 +126,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     {}
 
     // WalletMon logic functions
-    function initTokenStatus(uint256 tokenID) public onlyOwner() {
+    function initTokenStatus(uint256 tokenID) private {
         _states[tokenID].health = Health.HEALTHY;
         _states[tokenID].lastMealTime = uint32(block.timestamp);
         _states[tokenID].lastSickTime = uint32(block.timestamp);
