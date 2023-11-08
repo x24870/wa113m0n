@@ -165,6 +165,14 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         _states[tokenId].health = Health.DEAD;
     }
 
+    function revive(uint256 tokenId) public isRevealed() onlyOwner() {
+        require(
+            _states[tokenId].health == Health.DEAD,
+            "WalleMon: not dead"
+        );
+        _states[tokenId].health = Health.HEALTHY;
+    }
+
     function batchSick(uint256[] calldata tokenIds) public onlyOwner() {
         for (uint256 i = 0; i < tokenIds.length; i++) {
             if (_states[i].health != Health.HEALTHY) {
