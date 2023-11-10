@@ -7,9 +7,9 @@ import (
 
 type GemInft interface {
 	GetAmount() uint
-	GetByTokenID(db *gorm.DB) (GemInft, error)
-	GetByTokenIDAndLock(db *gorm.DB) (GemInft, error)
-	CreateIfNotExists(db *gorm.DB) (GemInft, error)
+	GetByTokenID(db *gorm.DB, tokenID uint) (GemInft, error)
+	GetByTokenIDAndLock(db *gorm.DB, tokenID uint) (GemInft, error)
+	CreateIfNotExists(db *gorm.DB, tokenID uint) (GemInft, error)
 	Update(db *gorm.DB, values interface{}) error
 }
 
@@ -41,6 +41,13 @@ func (t *gem) Indexes() []CustomIndex {
 			Type:      "",
 			Condition: "",
 		},
+		{
+			Name:      "token_id_idx",
+			Unique:    false,
+			Fields:    []string{"token_id"},
+			Type:      "",
+			Condition: "",
+		},
 	}
 }
 
@@ -56,31 +63,31 @@ func (t *gem) GetAmount() uint {
 	return t.Amount
 }
 
-func (t *gem) GetByTokenID(db *gorm.DB) (GemInft, error) {
-	if err := db.Where("token_id = ?", t.TokenID).First(t).Error; err != nil {
+func (t *gem) GetByTokenID(db *gorm.DB, tokenID uint) (GemInft, error) {
+	if err := db.Where("token_id = ?", tokenID).First(t).Error; err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *gem) GetByTokenIDAndLock(db *gorm.DB) (GemInft, error) {
+func (t *gem) GetByTokenIDAndLock(db *gorm.DB, tokenID uint) (GemInft, error) {
 	if err := db.Set("gorm:query_option", "FOR UPDATE").
-		Where("token_id = ?", t.TokenID).
+		Where("token_id = ?", tokenID).
 		First(t).Error; err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *gem) CreateIfNotExists(db *gorm.DB) (GemInft, error) {
-	if err := db.Where("token_id = ?", t.TokenID).FirstOrCreate(t).Error; err != nil {
+func (t *gem) CreateIfNotExists(db *gorm.DB, tokenID uint) (GemInft, error) {
+	if err := db.Where("token_id = ?", tokenID).FirstOrCreate(t).Error; err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
 func (t *gem) Update(db *gorm.DB, values interface{}) error {
-	if err := db.Model(t).Updates(values).Error; err != nil {
+	if err := db.Model(t).Where("token_id = ?", t.TokenID).Updates(values).Error; err != nil {
 		return err
 	}
 	return nil

@@ -9,9 +9,9 @@ import (
 type TokenInft interface {
 	GetID() uint
 	Create(db *gorm.DB) (TokenInft, error)
-	CreateIfNotExists(db *gorm.DB) (TokenInft, error)
-	GetByTokenID(db *gorm.DB) (TokenInft, error)
-	GetByTokenIDAndLock(db *gorm.DB) (TokenInft, error)
+	CreateIfNotExists(db *gorm.DB, tokenID uint) (TokenInft, error)
+	GetByTokenID(db *gorm.DB, tokenID uint) (TokenInft, error)
+	GetByTokenIDAndLock(db *gorm.DB, tokenID uint) (TokenInft, error)
 	GetState() uint
 	Update(db *gorm.DB, values interface{}) error
 }
@@ -52,6 +52,13 @@ func (t *token) Indexes() []CustomIndex {
 			Type:      "",
 			Condition: "",
 		},
+		{
+			Name:      "token_id_idx",
+			Unique:    false,
+			Fields:    []string{"token_id"},
+			Type:      "",
+			Condition: "",
+		},
 	}
 }
 
@@ -76,27 +83,27 @@ func (t *token) Create(db *gorm.DB) (TokenInft, error) {
 	return t, nil
 }
 
-func (t *token) CreateIfNotExists(db *gorm.DB) (TokenInft, error) {
+func (t *token) CreateIfNotExists(db *gorm.DB, tokenID uint) (TokenInft, error) {
 	if t.TokenID >= 1000 {
 		return nil, ErrInvalidTokenID
 	}
-	if err := db.Where("token_id = ?", t.TokenID).FirstOrCreate(t).Error; err != nil {
+	if err := db.Where("token_id = ?", tokenID).FirstOrCreate(t).Error; err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *token) GetByTokenID(db *gorm.DB) (TokenInft, error) {
-	if err := db.Where("token_id = ?", t.TokenID).
+func (t *token) GetByTokenID(db *gorm.DB, tokenID uint) (TokenInft, error) {
+	if err := db.Where("token_id = ?", tokenID).
 		First(t).Error; err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *token) GetByTokenIDAndLock(db *gorm.DB) (TokenInft, error) {
+func (t *token) GetByTokenIDAndLock(db *gorm.DB, tokenID uint) (TokenInft, error) {
 	if err := db.Set("gorm:query_option", "FOR UPDATE").
-		Where("token_id = ?", t.TokenID).
+		Where("token_id = ?", tokenID).
 		First(t).Error; err != nil {
 		return nil, err
 	}

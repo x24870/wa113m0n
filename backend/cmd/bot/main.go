@@ -20,6 +20,7 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/robfig/cron/v3"
+	"gorm.io/gorm"
 )
 
 var (
@@ -92,11 +93,11 @@ func main() {
 	defer database.Finalize()
 
 	c := cron.New()
-	c.AddFunc("@every 20s", func() {
+	c.AddFunc("@every 300s", func() {
 		sickBot()
 	})
 
-	c.AddFunc("@every 30s", func() {
+	c.AddFunc("@every 613s", func() {
 		killBot()
 	})
 
@@ -105,7 +106,7 @@ func main() {
 		poopBot()
 	})
 
-	c.AddFunc("@every 1m", func() {
+	c.AddFunc("@every 50s", func() {
 		healthBot()
 	})
 
@@ -130,8 +131,11 @@ func healthBot() {
 	db := database.GetSQL()
 	for tokenID, state := range ret {
 		t := models.NewToken(uint(tokenID))
-		t, err := models.Token.GetByTokenIDAndLock(db)
+		t, err := models.Token.GetByTokenIDAndLock(db, uint(tokenID))
 		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				continue
+			}
 			fmt.Println(fmt.Errorf("healthBot: failed to get tokenID[%d] from DB: %v", tokenID, err))
 			continue
 		}
@@ -154,11 +158,14 @@ func poopBot() {
 		fmt.Println(fmt.Errorf("poopBot: failed to list poops from DB: %v", err))
 		return
 	}
-	fmt.Println("poopBot: poops: ", poops)
+	fmt.Println("poop list from DB: ", poops)
+	for _, p := range poops {
+		fmt.Print(p.GetTokenID(), " ")
+	}
 
 	for _, p := range poops {
 		// check if tokenID is already dead
-		t, err := models.Token.GetByTokenID(db)
+		t, err := models.Token.GetByTokenID(db, p.GetTokenID())
 		if err != nil {
 			fmt.Println(fmt.Errorf("poopBot: failed to get tokenID[%d] from DB: %v", p.GetTokenID(), err))
 			continue
@@ -203,7 +210,7 @@ func sickBot() {
 	// update state in DB based on poop sick list
 	for _, tokenID := range poopSickList {
 		t := models.NewToken(uint(tokenID))
-		t, err := t.GetByTokenID(db)
+		t, err := t.GetByTokenID(db, uint(tokenID))
 		if err != nil {
 			fmt.Println(fmt.Errorf("sickBot: failed to get tokenID[%d] from DB: %v", tokenID, err))
 			continue
@@ -247,7 +254,7 @@ func sickBot() {
 }
 
 func killBot() {
-	ret, err := toBeDeadkList(client)
+	ret, err := toBeDeadList(client)
 	if err != nil {
 		fmt.Println(err)
 		return
@@ -270,7 +277,7 @@ func killBot() {
 	db := database.GetSQL()
 	for _, tokenID := range ret {
 		t := models.NewToken(uint(tokenID.Int64()))
-		t, err := t.GetByTokenIDAndLock(db)
+		t, err := t.GetByTokenIDAndLock(db, uint(tokenID.Int64()))
 		if err != nil {
 			fmt.Println(fmt.Errorf("killBot: failed to get tokenID[%d] from DB: %v", tokenID, err))
 			continue
@@ -375,7 +382,7 @@ func batchSick(list ToBeSickListRet) error {
 	return nil
 }
 
-func toBeDeadkList(client *ethclient.Client) (ToBeSickListRet, error) {
+func toBeDeadList(client *ethclient.Client) (ToBeSickListRet, error) {
 	data, err := parsedABI.Pack("toBeDeadList")
 	if err != nil {
 		return nil, fmt.Errorf("failed to pack ABI call: %v", err)

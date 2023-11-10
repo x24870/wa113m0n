@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+
 	uuid "github.com/satori/go.uuid"
 	"gorm.io/gorm"
 )
@@ -8,9 +10,9 @@ import (
 type PoopInft interface {
 	GetAmount() uint
 	GetTokenID() uint
-	GetByTokenID(db *gorm.DB) (PoopInft, error)
-	GetByTokenIDAndLock(db *gorm.DB) (PoopInft, error)
-	CreateIfNotExists(db *gorm.DB) (PoopInft, error)
+	GetByTokenID(db *gorm.DB, tokenID uint) (PoopInft, error)
+	GetByTokenIDAndLock(db *gorm.DB, tokenID uint) (PoopInft, error)
+	CreateIfNotExists(db *gorm.DB, tokenID uint) (PoopInft, error)
 	Update(db *gorm.DB, values interface{}) error
 	ListShouldSick(db *gorm.DB) ([]uint, error)
 	List(db *gorm.DB) ([]PoopInft, error)
@@ -47,12 +49,20 @@ func (t *poop) Indexes() []CustomIndex {
 			Type:      "",
 			Condition: "",
 		},
+		{
+			Name:      "token_id_idx",
+			Unique:    false,
+			Fields:    []string{"token_id"},
+			Type:      "",
+			Condition: "",
+		},
 	}
 }
 
-func NewPoop(amount uint) PoopInft {
+func NewPoop(tokenID uint) PoopInft {
 	p := poop{
-		Amount: amount,
+		TokenID: tokenID,
+		Amount:  0,
 	}
 	return &p
 }
@@ -65,31 +75,31 @@ func (t *poop) GetTokenID() uint {
 	return t.TokenID
 }
 
-func (t *poop) GetByTokenID(db *gorm.DB) (PoopInft, error) {
+func (t *poop) GetByTokenID(db *gorm.DB, tokenID uint) (PoopInft, error) {
 	if err := db.Where("token_id = ?", t.TokenID).First(t).Error; err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *poop) GetByTokenIDAndLock(db *gorm.DB) (PoopInft, error) {
+func (t *poop) GetByTokenIDAndLock(db *gorm.DB, tokenID uint) (PoopInft, error) {
 	if err := db.Set("gorm:query_option", "FOR UPDATE").
-		Where("token_id = ?", t.TokenID).
+		Where("token_id = ?", tokenID).
 		First(t).Error; err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
-func (t *poop) CreateIfNotExists(db *gorm.DB) (PoopInft, error) {
-	if err := db.Where("token_id = ?", t.TokenID).FirstOrCreate(t).Error; err != nil {
+func (t *poop) CreateIfNotExists(db *gorm.DB, tokenID uint) (PoopInft, error) {
+	if err := db.Where("token_id = ?", tokenID).FirstOrCreate(t).Error; err != nil {
 		return nil, err
 	}
 	return t, nil
 }
 
 func (t *poop) Update(db *gorm.DB, values interface{}) error {
-	if err := db.Model(t).Updates(values).Error; err != nil {
+	if err := db.Model(t).Where("token_id = ?", t.TokenID).Updates(values).Error; err != nil {
 		return err
 	}
 	return nil
@@ -105,6 +115,15 @@ func (t *poop) ListShouldSick(db *gorm.DB) ([]uint, error) {
 
 	var ret []uint
 	for _, p := range poops {
+		t := NewToken(p.TokenID)
+		t, err := t.GetByTokenID(db, p.TokenID)
+		if err != nil {
+			continue // TODO
+		}
+		if t.GetState() != 0 {
+			continue
+		}
+
 		ret = append(ret, p.TokenID)
 	}
 
@@ -112,15 +131,16 @@ func (t *poop) ListShouldSick(db *gorm.DB) ([]uint, error) {
 }
 
 func (t *poop) List(db *gorm.DB) ([]PoopInft, error) {
-	var poops []poop
-	if err := db.Find(&poops).Error; err != nil {
+	poops := []*poop{}
+	err := db.Find(&poops).Error
+	if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, err
 	}
 
-	var ret []PoopInft
+	poopInfts := []PoopInft{}
 	for _, p := range poops {
-		ret = append(ret, &p)
+		poopInfts = append(poopInfts, p)
 	}
 
-	return ret, nil
+	return poopInfts, nil
 }

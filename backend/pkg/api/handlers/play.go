@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -44,14 +45,14 @@ func GetGem(c *gin.Context) {
 
 	db := database.GetSQL()
 	t := models.NewToken(req.TokenID)
-	t, err = t.CreateIfNotExists(db)
+	t, err = t.CreateIfNotExists(db, req.TokenID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	g := models.NewGem(t.GetID())
-	g, err = g.CreateIfNotExists(db)
+	g, err = g.CreateIfNotExists(db, t.GetID())
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -126,7 +127,7 @@ func Play(c *gin.Context) {
 	// check if token is healthy
 	t := models.NewToken(req.TokenID)
 	// t, err := t.GetByTokenID(db)
-	t, err := t.CreateIfNotExists(db)
+	t, err := t.CreateIfNotExists(db, req.TokenID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error."})
 		return
@@ -150,12 +151,12 @@ func Play(c *gin.Context) {
 	// increase gem
 	err = database.Transaction(db, func(tx *gorm.DB) error {
 		g := models.NewGem(req.TokenID)
-		g, err := g.CreateIfNotExists(db)
+		g, err := g.CreateIfNotExists(db, req.TokenID)
 		if err != nil {
 			return err
 		}
 
-		g, err = g.GetByTokenIDAndLock(db)
+		g, err = g.GetByTokenIDAndLock(db, req.TokenID)
 		if err != nil {
 			return err
 		}
@@ -196,6 +197,7 @@ func GetPoop(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "token_id is required"})
 		return
 	}
+	fmt.Println("!!!GetPoop id: ", id)
 
 	val, err := strconv.ParseUint(id, 10, 64)
 	if err != nil {
@@ -206,13 +208,14 @@ func GetPoop(c *gin.Context) {
 	req := GetPoopReq{
 		TokenID: uint(val),
 	}
+	fmt.Println("!!!req.token_id: ", req.TokenID)
 
 	// TODO: maybe check if this address owns this token
 
 	// create poop if not exists
 	db := database.GetSQL()
 	p := models.NewPoop(req.TokenID)
-	p, err = p.CreateIfNotExists(db)
+	p, err = p.CreateIfNotExists(db, req.TokenID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -259,6 +262,7 @@ func Clean(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	fmt.Println("!!!Clean id: ", req.TokenID)
 
 	// sig, err := utils.SignatureToBytes(req.Signature)
 	// if err != nil {
@@ -285,14 +289,14 @@ func Clean(c *gin.Context) {
 	db := database.GetSQL()
 	p := models.NewPoop(req.TokenID)
 	// p, err := p.GetByTokenID(db)
-	p, err := p.CreateIfNotExists(db)
+	p, err := p.CreateIfNotExists(db, req.TokenID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	err = database.Transaction(db, func(tx *gorm.DB) error {
-		p, err = p.GetByTokenIDAndLock(db)
+		p, err = p.GetByTokenIDAndLock(db, req.TokenID)
 		if err != nil {
 			return err
 		}

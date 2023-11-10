@@ -90,6 +90,13 @@ func (t *opLog) Indexes() []CustomIndex {
 			Condition: "",
 		},
 		{
+			Name:      "token_id_idx",
+			Unique:    false,
+			Fields:    []string{"token_id"},
+			Type:      "",
+			Condition: "",
+		},
+		{
 			Name:      "token_id_op_type_created_at_idx",
 			Unique:    false,
 			Fields:    []string{"token_id", "op_type", "created_at"},
