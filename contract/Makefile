@@ -31,10 +31,10 @@ estimateGasPrice:
 	cast gas-price --rpc-url=${ARB}
 	
 safeMintPreheat:
-	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
+	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512 "safeMint(address)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 safeMintWallemon:
 	if [ "$(network)" = "goerli" ]; then \
-		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0x9fc184Dc6A94B43e56478e817e31C15315Ac0757 "safeMint(address,string)" 0x26A6b256284904c7e57eAc43dee5185D47cD2c3a ""; \
+		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0x78a201027fea5a36ba53bfc122Ff5370bc2625b6 "safeMint(address,string)" 0xf80620C02ef934f760fCBe8e8311BE7027C6201b ""; \
 	elif [ "$(network)" = "arbitrum" ]; then \
 		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0xB3545c6bb37E4854d57ABE36db9943dbf795068d "safeMint(address)" 0x0; \
 	else \
@@ -55,21 +55,34 @@ setReferral:
 	fi
 
 getReferral:
-	cast call  --rpc-url=${LOCALHOST} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "getReferralAmounts(string)(uint32)" wallemon
+	if [ "$(network)" = "goerli" ]; then \
+		cast call  --rpc-url=${GOERLI} 0x6972D5282c530fE0F92797578582fdeb5aC7414D "getReferralAmounts(string)(uint32)" qa; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		@echo "not implemented"; \
+	else \
+		@echo "not implemented"; \
+	fi
+
 getReferralOwner:
 	cast call  --rpc-url=${LOCALHOST} 0x5FbDB2315678afecb367f032d93F642f64180aa3 "getOwner()(address)"
 setReferralOwner:
 	cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0 "setOwner(address)()" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 reveal:
 	if [ "$(network)" = "goerli" ]; then \
-		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0x9fc184Dc6A94B43e56478e817e31C15315Ac0757 "setRevealed(bool)()" true; \
+		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0xa3C204CF706069E7D4898482D11610903916C575 "setRevealed(bool)()" true; \
 	elif [ "$(network)" = "arbitrum" ]; then \
 		@echo not yet; \
 	else \
 		cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "setRevealed(bool)()" true; \
 	fi
 revealed:
-	cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "revealed()(bool)"
+	if [ "$(network)" = "goerli" ]; then \
+		cast call --rpc-url=${GOERLI} 0xa3C204CF706069E7D4898482D11610903916C575 "revealed()(bool)"; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		@echo not yet; \
+	else \
+		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "revealed(bool)(bool)"; \
+	fi
 
 health:
 	if [ "$(network)" = "goerli" ]; then \
@@ -119,11 +132,11 @@ ownerOf:
 balanceOf:
 	cast call ${CONTRACT} "balanceOf(address)(uint256)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 totalSupply:
-	cast call --rpc-url ${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "totalSupply()(uint256)"
+	cast call --rpc-url ${GOERLI} 0x78a201027fea5a36ba53bfc122Ff5370bc2625b6 "totalSupply()(uint256)"
 safeMint:
 	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address,string)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 ""
 safeMintGoerli:
-	cast send --rpc-url ${GOERLI} --private-key ${GOERLI_PRIVATE_KEY} ${PROXY} "safeMint(address,string)" ${GOERLI_ADDR} 0
+	cast send --rpc-url ${GOERLI} --private-key ${GOERLI_PRIVATE_KEY} 0x78a201027fea5a36ba53bfc122Ff5370bc2625b6 "safeMint(address,string)" ${GOERLI_ADDR} 0
 owner:
 	cast call ${CONTRACT} "owner()(address)"
 # preheat
