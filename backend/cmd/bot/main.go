@@ -174,14 +174,18 @@ func poopBot() {
 			continue
 		}
 
-		a := p.GetAmount()
-		if a >= models.PoopMaxAmount {
+		p, err := p.GetByTokenIDAndLock(db, p.GetTokenID())
+		if err != nil {
+			fmt.Println(fmt.Errorf("poopBot: failed to get tokenID[%d] poop from DB: %v", p.GetTokenID(), err))
+			continue
+		}
+		if p.GetAmount() >= models.PoopMaxAmount {
 			continue
 		}
 
 		// increase amount by 1
 		if err := p.Update(db, map[string]interface{}{
-			"amount": a + 1,
+			"amount": p.GetAmount() + 1,
 		}); err != nil {
 			fmt.Println(fmt.Errorf("poopBot: failed to update tokenID[%d] poop: %v", p.GetTokenID(), err))
 		}
@@ -210,7 +214,7 @@ func sickBot() {
 	// update state in DB based on poop sick list
 	for _, tokenID := range poopSickList {
 		t := models.NewToken(uint(tokenID))
-		t, err := t.GetByTokenID(db, uint(tokenID))
+		t, err := t.GetByTokenIDAndLock(db, uint(tokenID))
 		if err != nil {
 			fmt.Println(fmt.Errorf("sickBot: failed to get tokenID[%d] from DB: %v", tokenID, err))
 			continue
