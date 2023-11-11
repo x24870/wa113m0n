@@ -48,9 +48,9 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         __ERC721URIStorage_init();
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
-        _hungryDuration = 15 minutes;
-        _sickDuration = 15 minutes;
-        _invincibleDuration = 10 minutes;
+        _hungryDuration = 5 minutes;
+        _sickDuration = 2 minutes;
+        _invincibleDuration = 3 minutes;
         _registry = ERC6551Registry(registry);
         _tbaProxy = ERC6551AccountProxy(tbaProxy);
         _referral = Referral(referral);
@@ -128,9 +128,9 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
     // WalletMon logic functions
     function initTokenStatus(uint256 tokenID) private {
         _states[tokenID].health = Health.HEALTHY;
-        _states[tokenID].lastMealTime = uint32(block.timestamp);
-        _states[tokenID].lastSickTime = uint32(block.timestamp);
-        _states[tokenID].lastHealTime = uint32(block.timestamp);
+        _states[tokenID].lastMealTime = 0;
+        _states[tokenID].lastSickTime = 0;
+        _states[tokenID].lastHealTime = 0;
     }
 
     function feed(uint256 tokenId) public isRevealed() onlyOwnerOrTokenOwner(tokenId) {
@@ -147,6 +147,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
             "WalleMon: dead or sick"
         );
         _states[tokenId].health = Health.SICK;
+        _states[tokenId].lastSickTime = uint32(block.timestamp);
     }
 
     function heal(uint256 tokenId) public isRevealed() onlyOwnerOrTokenOwner(tokenId) {
@@ -155,6 +156,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
             "WalleMon: not sick"
         );
         _states[tokenId].health = Health.HEALTHY;
+        _states[tokenId].lastHealTime = uint32(block.timestamp);
     }
 
     function kill(uint256 tokenId) public isRevealed() onlyOwner() {
@@ -175,7 +177,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
     function batchSick(uint256[] calldata tokenIds) public onlyOwner() {
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            if (_states[i].health != Health.HEALTHY) {
+            if (_states[tokenIds[i]].health != Health.HEALTHY) {
                 continue;
             }
             sick(tokenIds[i]);
@@ -184,7 +186,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
     function batachKill(uint256[] calldata tokenIds) public onlyOwner() {
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            if (_states[i].health != Health.SICK) {
+            if (_states[tokenIds[i]].health != Health.SICK) {
                 continue;
             }
             kill(tokenIds[i]);
@@ -219,7 +221,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
         // First pass to determine the size
         for (uint256 i = 0; i < _nextTokenId; i++) {
-            if (_states[i].health == Health.HEALTHY && 
+            if (_states[i].health == Health.HEALTHY &&
+                _states[i].lastMealTime != 0 &&
                 block.timestamp - _states[i].lastMealTime > _hungryDuration &&
                 block.timestamp - _states[i].lastHealTime > _invincibleDuration
             ) {
@@ -233,7 +236,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         // Second pass to populate the results
         uint256 resultIndex = 0;
         for (uint256 i = 0; i < _nextTokenId; i++) {
-            if (_states[i].health == Health.HEALTHY && 
+            if (_states[i].health == Health.HEALTHY &&
+                _states[i].lastMealTime != 0 &&
                 block.timestamp - _states[i].lastMealTime > _hungryDuration &&
                 block.timestamp - _states[i].lastHealTime > _invincibleDuration
             ) {
@@ -252,7 +256,8 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
 
         // First pass to determine the size
         for (uint256 i = 0; i < _nextTokenId; i++) {
-            if (_states[i].health == Health.SICK && 
+            if (_states[i].health == Health.SICK &&
+                _states[i].lastSickTime != 0 &&
                 block.timestamp - _states[i].lastSickTime > _sickDuration
             ) {
                 counter++;
@@ -266,6 +271,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         uint256 resultIndex = 0;
         for (uint256 i = 0; i < _nextTokenId; i++) {
             if (_states[i].health == Health.SICK && 
+                _states[i].lastSickTime != 0 &&
                 block.timestamp - _states[i].lastSickTime > _sickDuration
             ) {
                 result[resultIndex] = i;
