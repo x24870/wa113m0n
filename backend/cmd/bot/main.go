@@ -93,20 +93,20 @@ func main() {
 	defer database.Finalize()
 
 	c := cron.New()
-	c.AddFunc("@every 300s", func() {
+	c.AddFunc("@every 30s", func() {
 		sickBot()
 	})
 
-	c.AddFunc("@every 613s", func() {
+	c.AddFunc("@every 35s", func() {
 		killBot()
 	})
 
-	c.AddFunc(fmt.Sprintf("@every %ds", models.PoopDuration), func() {
-		// c.AddFunc("@every 5s", func() {
+	// c.AddFunc(fmt.Sprintf("@every %ds", models.PoopDuration), func() {
+	c.AddFunc("@every 20s", func() {
 		poopBot()
 	})
 
-	c.AddFunc("@every 50s", func() {
+	c.AddFunc("@every 56s", func() {
 		healthBot()
 	})
 
@@ -130,7 +130,6 @@ func healthBot() {
 
 	db := database.GetSQL()
 	for tokenID, state := range ret {
-		t := models.NewToken(uint(tokenID))
 		t, err := models.Token.GetByTokenIDAndLock(db, uint(tokenID))
 		if err != nil {
 			if err == gorm.ErrRecordNotFound {
@@ -152,6 +151,13 @@ func healthBot() {
 }
 
 func poopBot() {
+	ts, err := totalSupply(client)
+	if err != nil {
+		fmt.Println(fmt.Errorf("sickBot: failed to get total supply: %v", err))
+		return
+	}
+	totalSupply := uint(ts)
+
 	db := database.GetSQL()
 	poops, err := models.Poop.List(db)
 	if err != nil {
@@ -164,6 +170,10 @@ func poopBot() {
 	}
 
 	for _, p := range poops {
+		// check if tokenID is valid
+		if p.GetTokenID() >= totalSupply {
+			continue
+		}
 		// check if tokenID is already dead
 		t, err := models.Token.GetByTokenID(db, p.GetTokenID())
 		if err != nil {
@@ -184,6 +194,7 @@ func poopBot() {
 		}
 
 		// increase amount by 1
+		fmt.Printf("[%d]:%d increase amount by 1\n", p.GetTokenID(), p.GetAmount())
 		if err := p.Update(db, map[string]interface{}{
 			"amount": p.GetAmount() + 1,
 		}); err != nil {
@@ -194,6 +205,13 @@ func poopBot() {
 }
 
 func sickBot() {
+	ts, err := totalSupply(client)
+	if err != nil {
+		fmt.Println(fmt.Errorf("sickBot: failed to get total supply: %v", err))
+		return
+	}
+	totalSupply := uint(ts)
+
 	// get sick list if exeeded last meal time duration
 	ret, err := toBeSickList(client)
 	if err != nil {
@@ -213,6 +231,9 @@ func sickBot() {
 
 	// update state in DB based on poop sick list
 	for _, tokenID := range poopSickList {
+		if tokenID >= totalSupply {
+			continue
+		}
 		t := models.NewToken(uint(tokenID))
 		t, err := t.GetByTokenIDAndLock(db, uint(tokenID))
 		if err != nil {
@@ -258,6 +279,13 @@ func sickBot() {
 }
 
 func killBot() {
+	ts, err := totalSupply(client)
+	if err != nil {
+		fmt.Println(fmt.Errorf("killBot: failed to get total supply: %v", err))
+		return
+	}
+	totalSupply := int64(ts)
+
 	ret, err := toBeDeadList(client)
 	if err != nil {
 		fmt.Println(err)
@@ -280,6 +308,9 @@ func killBot() {
 	// update state in DB
 	db := database.GetSQL()
 	for _, tokenID := range ret {
+		if tokenID.Int64() >= totalSupply {
+			continue
+		}
 		t := models.NewToken(uint(tokenID.Int64()))
 		t, err := t.GetByTokenIDAndLock(db, uint(tokenID.Int64()))
 		if err != nil {
@@ -296,6 +327,32 @@ func killBot() {
 			}
 		}
 	}
+}
+
+func totalSupply(client *ethclient.Client) (uint, error) {
+	data, err := parsedABI.Pack("totalSupply")
+	if err != nil {
+		return 0, fmt.Errorf("failed to pack ABI call: %v", err)
+	}
+
+	callArgs := ethereum.CallMsg{
+		From: ownerAddr,
+		To:   &wallemonAddr,
+		Data: data,
+	}
+
+	res, err := client.CallContract(context.Background(), callArgs, nil)
+	if err != nil {
+		return 0, fmt.Errorf("failed to call contract: %v", err)
+	}
+
+	var ret *big.Int
+	err = parsedABI.UnpackIntoInterface(&ret, "totalSupply", res)
+	if err != nil {
+		return 0, fmt.Errorf("failed to unpack ABI call: %v", err)
+	}
+
+	return uint(ret.Int64()), nil
 }
 
 func healthList(client *ethclient.Client) (HeathListRet, error) {

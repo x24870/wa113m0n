@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strconv"
 
 	hdlr "wallemon/pkg/api/handlers"
 	"wallemon/pkg/utils"
@@ -17,8 +18,35 @@ import (
 const baseURL = "http://localhost:8080" // Modify this according to your actual server's address and port.
 
 func main() {
+	// playAndClean(1)
+	getVals()
+}
+
+func getVals() {
+	maxTokenID := 10
+
+	for i := 0; i < maxTokenID; i++ {
+		// GetGem request
+		getGemResp, err := getGemRequest(strconv.Itoa(i)) // Provide the appropriate token_id value.
+		if err != nil {
+			fmt.Println("Error in GetGem request:", err)
+			return
+		}
+		fmt.Println("GetGem response:", getGemResp)
+		// GetPoop request
+		getPoopResp, err := getPoopRequest(strconv.Itoa(i)) // Provide the appropriate token_id value.
+		if err != nil {
+			fmt.Println("Error in GetPoop request:", err)
+			return
+		}
+		fmt.Println("GetPoop response:", getPoopResp)
+	}
+
+}
+
+func playAndClean(tokenID uint) {
 	// GetGem request
-	getGemResp, err := getGemRequest("0") // Provide the appropriate token_id value.
+	getGemResp, err := getGemRequest(strconv.Itoa(int(tokenID))) // Provide the appropriate token_id value.
 	if err != nil {
 		fmt.Println("Error in GetGem request:", err)
 		return
@@ -48,7 +76,6 @@ func main() {
 		fmt.Println("Error in converting private key:", err)
 		return
 	}
-	tokenID := 0
 	msgHash := crypto.Keccak256([]byte(resp.Message))
 	sig, err := crypto.Sign(msgHash, privateKey)
 	if err != nil {
@@ -59,7 +86,7 @@ func main() {
 	// modify the signature to match the format in the backend
 	sig[64] += 27
 
-	playResp, err := playRequest(uint(tokenID), addr, hex.EncodeToString(sig)) // Provide appropriate values.
+	playResp, err := playRequest(tokenID, addr, hex.EncodeToString(sig)) // Provide appropriate values.
 	if err != nil {
 		fmt.Println("Error in Play request:", err)
 		return
@@ -67,7 +94,7 @@ func main() {
 	fmt.Println("Play response:", playResp)
 
 	// GetPoop request
-	getPoopResp, err := getPoopRequest("0") // Provide the appropriate token_id value.
+	getPoopResp, err := getPoopRequest(strconv.Itoa(int(tokenID))) // Provide the appropriate token_id value.
 	if err != nil {
 		fmt.Println("Error in GetPoop request:", err)
 		return
@@ -106,7 +133,6 @@ func main() {
 		return
 	}
 	fmt.Println("Clean response:", cleanResp)
-
 }
 
 func getGemRequest(tokenID string) (string, error) {
