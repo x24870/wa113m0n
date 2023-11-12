@@ -135,8 +135,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         states[tokenID].lastHealTime = 0;
     }
 
-    // TODO: remove onlyOwnerOrTokenOwner for gas optimization
-    function feed(uint256 tokenId) public isRevealed() onlyOwnerOrTokenOwner(tokenId) {
+    function feed(uint256 tokenId) public isRevealed() {
         require(
             states[tokenId].health == Health.HEALTHY,
             "WalleMon: dead or sick"
@@ -155,8 +154,7 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         states[tokenId].sickCount++;
     }
 
-    // TODO: remove onlyOwnerOrTokenOwner for gas optimization
-    function heal(uint256 tokenId) public isRevealed() onlyOwnerOrTokenOwner(tokenId) {
+    function heal(uint256 tokenId) public isRevealed() {
         require(
             states[tokenId].health == Health.SICK,
             "WalleMon: not sick"
