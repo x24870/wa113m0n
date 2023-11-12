@@ -174,13 +174,13 @@ func poopBot() {
 		if p.GetTokenID() >= totalSupply {
 			continue
 		}
-		// check if tokenID is already dead
+		// check if tokenID is healthy
 		t, err := models.Token.GetByTokenID(db, p.GetTokenID())
 		if err != nil {
 			fmt.Println(fmt.Errorf("poopBot: failed to get tokenID[%d] from DB: %v", p.GetTokenID(), err))
 			continue
 		}
-		if t.GetState() == 2 {
+		if t.GetState() != 0 {
 			continue
 		}
 
