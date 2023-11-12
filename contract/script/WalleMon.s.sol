@@ -17,7 +17,7 @@ contract DeployWalleMon is Script {
         // address referral = deployReferral();
         // address referral = address(0x6972D5282c530fE0F92797578582fdeb5aC7414D);// TODO: replace to referral address
         address referral = address(0x5FbDB2315678afecb367f032d93F642f64180aa3); // local
-        revert("Hey, did you replace the referral address and remove console2.log?");
+        // revert("Hey, did you replace the referral address and remove console2.log?");
     
         // ERC6551 contracts
         address registry = deployERC6551Registry();

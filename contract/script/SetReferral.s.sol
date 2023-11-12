@@ -12,7 +12,7 @@ contract DeployWalleMon is Script {
         vm.startBroadcast();
 
         // set single referral amount
-        referral = Referral(address(0x6972D5282c530fE0F92797578582fdeb5aC7414D));
+        referral = Referral(address(0x5FbDB2315678afecb367f032d93F642f64180aa3));
         // referral.setReferralAmounts("wallemon", 3);
 
         // set multiple referral amounts

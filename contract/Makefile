@@ -38,7 +38,7 @@ safeMintWallemon:
 	elif [ "$(network)" = "arbitrum" ]; then \
 		cast send --rpc-url=${GOERLI} --private-key=${GOERLI_PRIVATE_KEY} 0xB3545c6bb37E4854d57ABE36db9943dbf795068d "safeMint(address)" 0x0; \
 	else \
-		cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "safeMint(address,string)" 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266 ""; \
+		cast send --rpc-url=${LOCALHOST} --private-key=${PRIVATE_KEY} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "safeMint(address,string)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 ""; \
 	fi
 
 script:
@@ -81,16 +81,16 @@ revealed:
 	elif [ "$(network)" = "arbitrum" ]; then \
 		@echo not yet; \
 	else \
-		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "revealed(bool)(bool)"; \
+		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "revealed()(bool)"; \
 	fi
 
 health:
 	if [ "$(network)" = "goerli" ]; then \
-		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "health(uint256)(uint8)" 0; \
+		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "health(uint256)(uint8)" $(tokenID); \
 	elif [ "$(network)" = "arbitrum" ]; then \
 		@echo not yet; \
 	else \
-		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "health(uint256)(uint8)" 0; \
+		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "health(uint256)(uint8)"  $(tokenID); \
 	fi
 
 toBeSickList:
@@ -132,7 +132,13 @@ ownerOf:
 balanceOf:
 	cast call ${CONTRACT} "balanceOf(address)(uint256)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 totalSupply:
-	cast call --rpc-url ${GOERLI} 0x78a201027fea5a36ba53bfc122Ff5370bc2625b6 "totalSupply()(uint256)"
+	if [ "$(network)" = "goerli" ]; then \
+		cast call --rpc-url=${GOERLI} 0x0 "totalSupply()(uint256)"; \
+	elif [ "$(network)" = "arbitrum" ]; then \
+		@echo not yet; \
+	else \
+		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "totalSupply()(uint256)"; \
+	fi
 safeMint:
 	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "safeMint(address,string)" 0x70997970C51812dc3A010C7d01b50e0d17dc79C8 ""
 safeMintGoerli:
