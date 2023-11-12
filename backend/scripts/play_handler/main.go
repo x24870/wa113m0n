@@ -18,8 +18,8 @@ import (
 const baseURL = "http://localhost:8080" // Modify this according to your actual server's address and port.
 
 func main() {
-	// playAndClean(1)
-	getVals()
+	playAndClean(3)
+	// getVals()
 }
 
 func getVals() {

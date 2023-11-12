@@ -92,6 +92,8 @@ health:
 	else \
 		cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "health(uint256)(uint8)"  $(tokenID); \
 	fi
+lastMealTime:
+	cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "lastMealTime(uint256)(uint256)" $(tokenID)
 
 toBeSickList:
 	cast call --rpc-url=${LOCALHOST} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "toBeSickList()(uint256[])"
@@ -104,7 +106,7 @@ CONTRACT=0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512
 
 # wallemon calls
 feed:
-	cast send --private-key ${USER_PRIVATE_KEY} ${CONTRACT} "feed(uint256)" 0
+	cast send --private-key ${USER_PRIVATE_KEY} 0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9 "feed(uint256)" $(tokenID)
 sick:
 	cast send --private-key ${PRIVATE_KEY} ${CONTRACT} "sick(uint256)" 0
 heal:

@@ -50,9 +50,9 @@ contract WalleMon is Initializable, ERC721Upgradeable, ERC721EnumerableUpgradeab
         __ERC721URIStorage_init();
         __Ownable_init(initialOwner);
         __UUPSUpgradeable_init();
-        _hungryDuration = 5 minutes;
-        _sickDuration = 2 minutes;
-        _invincibleDuration = 3 minutes;
+        _hungryDuration = 30 minutes;
+        _sickDuration = 30 minutes;
+        _invincibleDuration = 10 minutes;
         _registry = ERC6551Registry(registry);
         _tbaProxy = ERC6551AccountProxy(tbaProxy);
         _referral = Referral(referral);

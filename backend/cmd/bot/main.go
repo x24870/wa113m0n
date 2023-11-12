@@ -93,16 +93,16 @@ func main() {
 	defer database.Finalize()
 
 	c := cron.New()
-	c.AddFunc("@every 30s", func() {
+	c.AddFunc("@every 50s", func() {
 		sickBot()
 	})
 
-	c.AddFunc("@every 35s", func() {
+	c.AddFunc("@every 63s", func() {
 		killBot()
 	})
 
-	// c.AddFunc(fmt.Sprintf("@every %ds", models.PoopDuration), func() {
-	c.AddFunc("@every 20s", func() {
+	c.AddFunc(fmt.Sprintf("@every %ds", models.PoopDuration), func() {
+		// c.AddFunc("@every 20s", func() {
 		poopBot()
 	})
 
